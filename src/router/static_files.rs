@@ -1,6 +1,6 @@
 use askama_axum::IntoResponse;
 use axum::{
-    body::{boxed, Body, Full},
+    body::{boxed, Full},
     http::{header, StatusCode, Uri},
     response::Response,
 };

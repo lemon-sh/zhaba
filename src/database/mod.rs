@@ -1,12 +1,15 @@
 use std::{fs::OpenOptions, io::Write, time::Instant};
 
 use axum::body::Bytes;
+use chrono::{DateTime, Utc};
 use color_eyre::Result;
 use rusqlite::params;
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     oneshot,
 };
+
+use crate::templates::models;
 
 mod queries;
 
@@ -60,19 +63,44 @@ macro_rules! generate_executor {
 }
 
 generate_executor! {
-    AddPost / add_post, (db, content: String, ip: String, show_ip: bool, time: u64, image: Option<(Bytes, String)>) => Result<()> {
+    AddPost / post_insert, (db, content: String, ip: String, asn: u32, mnt: String, image: Option<(Bytes, String)>) => Result<()> {
         if let Some((image_data, image_path)) = image {
             let tx = db.transaction()?;
             let mut stmt = tx.prepare_cached(queries::INSERT_POST)?;
-            let mut file = OpenOptions::new().write(true).truncate(true).create_new(true).open(&image_path)?;
-            file.write_all(&image_data)?;
-            stmt.execute(params![content, ip, show_ip, Some(image_path), time])?;
+            OpenOptions::new().write(true).truncate(true).create_new(true).open(&image_path)?.write_all(&image_data)?;
+            stmt.execute(params![content, Some(image_path), ip, asn, mnt])?;
             drop(stmt);
             tx.commit()?;
         } else {
             let mut stmt = db.prepare_cached(queries::INSERT_POST)?;
-            stmt.execute(params![content, ip, show_ip, <Option<String>>::None, time])?;
+            stmt.execute(params![content, <Option<String>>::None, ip, asn, mnt])?;
         }
         Ok(())
+    }
+
+    GetPosts / posts_display, (db, offset: usize, page_size: usize) => rusqlite::Result<Vec<models::Post>> {
+        let mut stmt = db.prepare_cached(queries::SELECT_POSTS)?;
+        let mut rows = stmt.query([offset, page_size])?;
+
+        let mut posts = Vec::new();
+        while let Some(row) = rows.next()? {
+            let time: DateTime<Utc> = row.get(6)?;
+            let time = time.format("%Y-%m-%d %H:%m").to_string();
+            let whois = if let (Some(ip), Some(asn)) = (row.get(4)?, row.get(5)?) {
+                Some((ip, asn))
+            } else {
+                None
+            };
+            posts.push(models::Post {
+                id: row.get(0)?,
+                content: row.get(1)?,
+                image: row.get(2)?,
+                ip: row.get(3)?,
+                whois,
+                time
+            });
+        }
+
+        Ok(posts)
     }
 }

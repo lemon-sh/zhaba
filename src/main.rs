@@ -16,6 +16,7 @@ use crate::database::DbExecutor;
 mod config;
 mod database;
 mod router;
+mod templates;
 
 #[cfg(unix)]
 async fn terminate_signal() {
@@ -102,7 +103,7 @@ async fn maintenance(
         if let Err(e) = session_store.cleanup().await {
             tracing::error!("Failed to cleanup sessions: {e}");
         } else {
-            tracing::info!("Sessions cleaned up");
+            tracing::debug!("Sessions cleaned up");
         }
         select! {
             _ = sleep(interval) => {}

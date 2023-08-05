@@ -1,11 +1,12 @@
 pragma journal_mode = wal;
 pragma synchronous = 0;
 
-create table if not exists posts (
+create table if not exists posts(
     id integer primary key,
-    post text not null,
+    content text not null,
+    image text not null,
     ip text not null,
-    show_ip boolean not null,
-    image text,
-    time integer not null
+    asn integer,
+    mnt text,
+    time integer default (strftime('%s','now'))
 );

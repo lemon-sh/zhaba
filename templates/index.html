@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<ul>
+    {% for post in posts %}
+        <li>
+            {{ post.id }}, {{ post.time }}, {{ post.ip }}:<br>
+            {% match post.whois %}
+                {% when Some with ((asn, mnt)) %}
+                    {{ asn }}, {{ mnt }}<br>
+                {% when None %}
+            {% endmatch %}
+            {{ post.content }}
+            {% if let Some(path) = post.image %}
+                <br><img src="{{ path }}">
+            {% endif %}
+            <br><br>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}
