@@ -1,8 +1,9 @@
-use std::{time::{Duration, Instant}, path::PathBuf};
+use std::{time::Instant, io::Write};
+use std::fs::OpenOptions;
 
 use color_eyre::Result;
 use axum::body::Bytes;
-use rusqlite::{ErrorCode, OptionalExtension, params};
+use rusqlite::params;
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     oneshot,
@@ -52,8 +53,7 @@ macro_rules! generate_executor {
                             let _e = tx.send((||$handler)());
                         })*
                     }
-                    let runtime = Instant::now().duration_since(before).as_secs_f64() / 1000.0;
-                    tracing::debug!("task took {}ms", runtime);
+                    tracing::debug!("task took {}ms", Instant::now().duration_since(before).as_secs_f64() / 1000.0);
                 }
             }
         }
@@ -61,16 +61,19 @@ macro_rules! generate_executor {
 }
 
 generate_executor! {
-    AddPost / add_post, (db, content: String, ip: String, show_ip: bool, time: u64, image: Option<(Bytes, PathBuf)>) => Result<()> {
+    AddPost / add_post, (db, content: String, ip: String, show_ip: bool, time: u64, image: Option<(Bytes, String)>) => Result<()> {
         if let Some((image_data, image_path)) = image {
             let tx = db.transaction()?;
             let mut stmt = tx.prepare_cached(queries::INSERT_POST)?;
-            todo!()
+            let mut file = OpenOptions::new().write(true).truncate(true).create_new(true).open(&image_path)?;
+            file.write_all(&image_data)?;
+            stmt.execute(params![content, ip, show_ip, Some(image_path), time])?;
+            drop(stmt);
+            tx.commit()?;
         } else {
             let mut stmt = db.prepare_cached(queries::INSERT_POST)?;
             stmt.execute(params![content, ip, show_ip, <Option<String>>::None, time])?;
-        }
-        
+        }        
         Ok(())
     }
 }
