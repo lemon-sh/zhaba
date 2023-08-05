@@ -1,6 +1,6 @@
+use color_eyre::Result;
 use serde::Deserialize;
 use std::{env, fs, net::SocketAddr};
-use color_eyre::Result;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -8,6 +8,7 @@ pub struct Config {
     pub listen: SocketAddr,
     pub image_path: String,
     pub db: Option<String>,
+    pub cookie_secret: String,
 }
 
 impl Config {

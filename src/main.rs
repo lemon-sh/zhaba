@@ -1,15 +1,20 @@
-use std::{str::FromStr, thread, sync::Arc, time::Duration};
+use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
 
-use axum_sessions::async_session::{self, MemoryStore};
-use color_eyre::{Result, eyre::Context};
+use axum_sessions::async_session::{
+    self,
+    base64::{display::Base64Display, URL_SAFE_NO_PAD},
+    MemoryStore,
+};
+use color_eyre::{eyre::Context, Result};
 use config::Config;
-use tokio::{sync::broadcast, select, time::sleep};
+use rand::{thread_rng, RngCore};
+use tokio::{select, sync::broadcast, time::sleep};
 use tracing::Level;
 
 use crate::database::DbExecutor;
 
-mod database;
 mod config;
+mod database;
 mod router;
 
 #[cfg(unix)]
@@ -37,6 +42,20 @@ async fn main() -> Result<()> {
     color_eyre::config::HookBuilder::default()
         .display_env_section(false)
         .install()?;
+    if let Some(subcommand) = env::args().nth(1) {
+        match subcommand.as_str() {
+            "gensecret" => {
+                let mut bytes = [0u8; 64];
+                thread_rng().fill_bytes(&mut bytes);
+                let b64 = Base64Display::with_config(&bytes, URL_SAFE_NO_PAD);
+                eprintln!("{b64}");
+            }
+            _ => {
+                eprintln!("Error: Invalid subcommand '{subcommand}'");
+            }
+        }
+        return Ok(());
+    }
 
     let cfg = Arc::new(Config::load().wrap_err("Failed to load the configuration file")?);
 
@@ -44,21 +63,14 @@ async fn main() -> Result<()> {
         .with_max_level(Level::from_str(&cfg.log_level)?)
         .init();
 
-    tracing::info!(concat!(
-        "Initializing - ZSERadio v",
-        env!("CARGO_PKG_VERSION")
-    ));
+    tracing::info!(concat!("Initializing - zhaba v", env!("CARGO_PKG_VERSION")));
 
-    let (db_exec, db_conn) = DbExecutor::create(cfg.db.as_deref().unwrap_or("zseradio.db3"))?;
+    let (db_exec, db_conn) = DbExecutor::create(cfg.db.as_deref().unwrap_or("zhaba.db3"))?;
     let exec_thread = thread::spawn(move || db_exec.run());
 
     let session_store = async_session::MemoryStore::new();
     let (ctx, _) = broadcast::channel(1);
-    let maintenance_task = tokio::spawn(maintenance(
-        ctx.subscribe(),
-        session_store.clone(),
-        3600
-    ));
+    let maintenance_task = tokio::spawn(maintenance(ctx.subscribe(), session_store.clone(), 3600));
 
     let router = router::build(db_conn, cfg.clone(), session_store).await?;
 
@@ -79,7 +91,6 @@ async fn main() -> Result<()> {
     tracing::info!("Shutdown complete!");
     Ok(())
 }
-
 
 async fn maintenance(
     mut shutdown: broadcast::Receiver<()>,

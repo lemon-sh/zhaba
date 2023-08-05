@@ -1,8 +1,7 @@
-use std::{time::Instant, io::Write};
-use std::fs::OpenOptions;
+use std::{fs::OpenOptions, io::Write, time::Instant};
 
-use color_eyre::Result;
 use axum::body::Bytes;
+use color_eyre::Result;
 use rusqlite::params;
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
@@ -73,7 +72,7 @@ generate_executor! {
         } else {
             let mut stmt = db.prepare_cached(queries::INSERT_POST)?;
             stmt.execute(params![content, ip, show_ip, <Option<String>>::None, time])?;
-        }        
+        }
         Ok(())
     }
 }
