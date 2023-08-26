@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, str::FromStr};
+use std::{net::IpAddr, str::FromStr};
 
 use axum::{
     headers::{Error, Header},
@@ -7,7 +7,7 @@ use axum::{
 
 static X_FORWARDED_FOR: HeaderName = HeaderName::from_static("x-forwarded-for");
 
-struct XForwardedFor(Vec<SocketAddr>);
+pub struct XForwardedFor(pub Vec<IpAddr>);
 
 impl Header for XForwardedFor {
     fn name() -> &'static axum::http::HeaderName {
@@ -27,7 +27,7 @@ impl Header for XForwardedFor {
                 .split(',')
                 .map(str::trim);
             for ip in ips {
-                chain.push(SocketAddr::from_str(ip).map_err(|_| Error::invalid())?);
+                chain.push(IpAddr::from_str(ip).map_err(|_| Error::invalid())?);
             }
         }
         Ok(Self(chain))

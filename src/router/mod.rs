@@ -16,9 +16,9 @@ use color_eyre::Result;
 use crate::{config::Config, database::ExecutorConnection};
 
 mod error;
-mod static_files;
-
+mod headers;
 mod home;
+mod static_files;
 
 #[derive(Clone)]
 pub struct AppState {

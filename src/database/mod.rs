@@ -3,7 +3,7 @@ use std::{fs::OpenOptions, io::Write, path::PathBuf, time::Instant};
 
 use axum::body::Bytes;
 use chrono::NaiveDateTime;
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{eyre::eyre, Result};
 use rusqlite::params;
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
@@ -71,7 +71,11 @@ pub struct InsertImage {
 
 impl fmt::Debug for InsertImage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("InsertImage").field("bytes", &"...").field("directory", &self.directory).field("filename", &self.filename).finish()
+        f.debug_struct("InsertImage")
+            .field("bytes", &"...")
+            .field("directory", &self.directory)
+            .field("filename", &self.filename)
+            .finish()
     }
 }
 

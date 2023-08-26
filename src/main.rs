@@ -1,11 +1,14 @@
-use std::{env, net::SocketAddr, str::FromStr, sync::Arc, thread, time::Duration};
+use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
 
 use axum_sessions::async_session::{
     self,
     base64::{display::Base64Display, URL_SAFE_NO_PAD},
     MemoryStore,
 };
-use color_eyre::{eyre::Context, Result, eyre::eyre};
+use color_eyre::{
+    eyre::{eyre, Context},
+    Result,
+};
 use config::Config;
 use rand::{thread_rng, RngCore};
 use tokio::{select, sync::broadcast, time::sleep};
@@ -68,7 +71,10 @@ async fn main() -> Result<()> {
     tracing::info!(concat!("Initializing - zhaba v", env!("CARGO_PKG_VERSION")));
 
     if !cfg.image_path.is_dir() {
-        return Err(eyre!("The image path {:?} is not a directory", cfg.image_path))
+        return Err(eyre!(
+            "The image path {:?} is not a directory",
+            cfg.image_path
+        ));
     }
 
     let (db_exec, db_conn) = DbExecutor::create(cfg.db.as_deref().unwrap_or("zhaba.db3"))?;
@@ -82,7 +88,7 @@ async fn main() -> Result<()> {
 
     tracing::info!("Listening on {}", cfg.listen);
     if let Err(e) = axum::Server::bind(&cfg.listen)
-        .serve(router.into_make_service_with_connect_info::<SocketAddr>())
+        .serve(router.into_make_service())
         .with_graceful_shutdown(terminate_signal())
         .await
     {

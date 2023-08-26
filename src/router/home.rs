@@ -1,10 +1,11 @@
-use std::net::SocketAddr;
+use std::net::Ipv4Addr;
 
 use axum::{
     body::{Body, Bytes},
-    extract::{ConnectInfo, Multipart, Query, State},
+    extract::{Multipart, Query, State},
     http::{Response, StatusCode},
     response::IntoResponse,
+    TypedHeader,
 };
 
 use rand::{
@@ -19,7 +20,7 @@ use crate::{
     whois::{self},
 };
 
-use super::{error, AppState};
+use super::{error, headers, AppState};
 
 const PAGE_SIZE: usize = 25;
 
@@ -46,7 +47,7 @@ pub async fn home_get(
 
 pub async fn home_post(
     State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    TypedHeader(xforwardedfor): TypedHeader<headers::XForwardedFor>,
     mp: Multipart,
 ) -> Result<impl IntoResponse, Response<Body>> {
     let (content, image) = read_post_mp(mp).await.map_err(error::err_into_500)?;
@@ -54,8 +55,13 @@ pub async fn home_post(
         return Err(error::http_400())
     };
 
-    let ip = addr.ip().to_string();
-    let whois = whois::whois(&state.cfg.whois_server, ip.as_str())
+    let ip = xforwardedfor
+        .0
+        .into_iter()
+        .next()
+        .unwrap_or(std::net::IpAddr::V4(Ipv4Addr::UNSPECIFIED))
+        .to_string();
+    let whois = whois::whois(&state.cfg.whois_server, &ip)
         .await
         .map_err(error::err_into_500)?;
 
