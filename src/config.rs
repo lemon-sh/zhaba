@@ -1,14 +1,15 @@
 use color_eyre::Result;
 use serde::Deserialize;
-use std::{env, fs, net::SocketAddr};
+use std::{env, fs, net::SocketAddr, path::PathBuf};
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub log_level: String,
     pub listen: SocketAddr,
-    pub image_path: String,
+    pub image_path: PathBuf,
     pub db: Option<String>,
     pub cookie_secret: String,
+    pub whois_server: SocketAddr
 }
 
 impl Config {

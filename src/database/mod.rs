@@ -1,4 +1,4 @@
-use std::{fs::OpenOptions, io::Write, time::Instant};
+use std::{fs::OpenOptions, io::Write, time::Instant, path::PathBuf};
 
 use axum::body::Bytes;
 use chrono::{DateTime, Utc};
@@ -9,7 +9,7 @@ use tokio::sync::{
     oneshot,
 };
 
-use crate::templates::models;
+use crate::{templates::models, whois::WhoisResult};
 
 mod queries;
 
@@ -62,13 +62,26 @@ macro_rules! generate_executor {
     };
 }
 
+#[derive(Debug)]
+pub struct InsertImage {
+    pub bytes: Bytes,
+    pub directory: PathBuf,
+    pub filename: String,
+}
+
 generate_executor! {
-    AddPost / post_insert, (db, content: String, ip: String, asn: u32, mnt: String, image: Option<(Bytes, String)>) => Result<()> {
-        if let Some((image_data, image_path)) = image {
+    AddPost / post_insert, (db, content: String, ip: String, whois: Option<WhoisResult>, image: Option<InsertImage>) => Result<()> {
+        let (asn, mnt) = if let Some(whois) = whois {
+            (Some(whois.asn), Some(whois.mnt))
+        } else {
+            (None, None)
+        };
+        if let Some(image) = image {
             let tx = db.transaction()?;
             let mut stmt = tx.prepare_cached(queries::INSERT_POST)?;
-            OpenOptions::new().write(true).truncate(true).create_new(true).open(&image_path)?.write_all(&image_data)?;
-            stmt.execute(params![content, Some(image_path), ip, asn, mnt])?;
+            let path = image.directory.join(&image.filename);
+            OpenOptions::new().write(true).truncate(true).create_new(true).open(path)?.write_all(&image.bytes)?;
+            stmt.execute(params![content, Some(image.filename), ip, asn, mnt])?;
             drop(stmt);
             tx.commit()?;
         } else {
@@ -86,8 +99,8 @@ generate_executor! {
         while let Some(row) = rows.next()? {
             let time: DateTime<Utc> = row.get(6)?;
             let time = time.format("%Y-%m-%d %H:%m").to_string();
-            let whois = if let (Some(ip), Some(asn)) = (row.get(4)?, row.get(5)?) {
-                Some((ip, asn))
+            let whois = if let (Some(asn), Some(mnt)) = (row.get(4)?, row.get(5)?) {
+                Some(WhoisResult { asn, mnt })
             } else {
                 None
             };

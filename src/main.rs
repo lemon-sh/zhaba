@@ -1,5 +1,6 @@
-use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
+use std::{env, str::FromStr, sync::Arc, thread, time::Duration, net::SocketAddr};
 
+use axum::ServiceExt;
 use axum_sessions::async_session::{
     self,
     base64::{display::Base64Display, URL_SAFE_NO_PAD},
@@ -17,6 +18,7 @@ mod config;
 mod database;
 mod router;
 mod templates;
+mod whois;
 
 #[cfg(unix)]
 async fn terminate_signal() {
@@ -77,7 +79,7 @@ async fn main() -> Result<()> {
 
     tracing::info!("Listening on {}", cfg.listen);
     if let Err(e) = axum::Server::bind(&cfg.listen)
-        .serve(router.into_make_service())
+        .serve(router.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(terminate_signal())
         .await
     {

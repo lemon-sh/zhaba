@@ -3,13 +3,25 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+
+<details>
+    <summary>Add post</summary>
+    <form action="/" method="post">
+        <textarea name="content"></textarea><br>
+        <label for="image">Attach an image (optional):</label>
+        <input type="file" accept="image/*" name="image" id="image"></label>
+        <br>
+        <button>click to shitpost</button>
+    </form>
+</details>
+
 <ul>
     {% for post in posts %}
         <li>
             {{ post.id }}, {{ post.time }}, {{ post.ip }}:<br>
             {% match post.whois %}
-                {% when Some with ((asn, mnt)) %}
-                    {{ asn }}, {{ mnt }}<br>
+                {% when Some with (whois) %}
+                    {{ whois.asn }}, {{ whois.mnt }}<br>
                 {% when None %}
             {% endmatch %}
             {{ post.content }}
