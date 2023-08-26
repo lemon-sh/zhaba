@@ -5,7 +5,7 @@ use axum_sessions::async_session::{
     base64::{display::Base64Display, URL_SAFE_NO_PAD},
     MemoryStore,
 };
-use color_eyre::{eyre::Context, Result};
+use color_eyre::{eyre::Context, Result, eyre::eyre};
 use config::Config;
 use rand::{thread_rng, RngCore};
 use tokio::{select, sync::broadcast, time::sleep};
@@ -66,6 +66,10 @@ async fn main() -> Result<()> {
         .init();
 
     tracing::info!(concat!("Initializing - zhaba v", env!("CARGO_PKG_VERSION")));
+
+    if !cfg.image_path.is_dir() {
+        return Err(eyre!("The image path {:?} is not a directory", cfg.image_path))
+    }
 
     let (db_exec, db_conn) = DbExecutor::create(cfg.db.as_deref().unwrap_or("zhaba.db3"))?;
     let exec_thread = thread::spawn(move || db_exec.run());
