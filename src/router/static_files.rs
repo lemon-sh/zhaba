@@ -1,20 +1,33 @@
+use std::io::ErrorKind;
+
 use askama_axum::IntoResponse;
 use axum::{
-    body::{boxed, Full},
+    body::{boxed, Full, StreamBody},
     http::{header, StatusCode, Uri},
-    response::Response,
+    response::Response, extract::State,
 };
 use rust_embed::RustEmbed;
+use tokio::fs::File;
+use tokio_util::io::ReaderStream;
 
-use super::error;
+use super::{error, AppState};
+
+pub async fn image_handler(State(state): State<AppState>, uri: Uri) -> impl IntoResponse {
+    let filename = uri.path().trim_start_matches('/').strip_prefix("img/").unwrap();
+    let path = state.cfg.image_path.join(filename);
+    let file = match File::open(path).await {
+        Ok(o) => o,
+        Err(e) if e.kind() == ErrorKind::NotFound => return Err(error::http_404()),
+        Err(e) => return Err(error::err_into_500(e))
+    };
+    let body = StreamBody::new(ReaderStream::new(file));
+    let mime = mime_guess::from_path(filename).first_or_octet_stream().to_string();
+    
+    Ok(([(header::CONTENT_TYPE, mime)], body))
+}
 
 pub async fn static_handler(uri: Uri) -> impl IntoResponse {
-    let mut path = uri.path().trim_start_matches('/').to_string();
-
-    if path.starts_with("static/") {
-        path = path.replace("static/", "");
-    }
-
+    let path = uri.path().trim_start_matches('/').strip_prefix("static/").unwrap().to_string();
     StaticFile(path)
 }
 

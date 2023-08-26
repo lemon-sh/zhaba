@@ -55,7 +55,7 @@ pub async fn home_post(
     };
 
     let ip = addr.ip().to_string();
-    let whois = whois::whois(state.cfg.whois_server, ip.as_str())
+    let whois = whois::whois(&state.cfg.whois_server, ip.as_str())
         .await
         .map_err(error::err_into_500)?;
 
@@ -67,7 +67,7 @@ pub async fn home_post(
         .map_err(error::err_into_500)?;
 
     let image = if let Some(bytes) = image {
-        let fileid = Alphanumeric.sample_string(&mut thread_rng(), 32);
+        let mut filename = Alphanumeric.sample_string(&mut thread_rng(), 32);
         // TODO: rewrite imghdr as a module of this project, it's dead simple
         let ext = match imghdr::from_bytes(&bytes) {
             Some(imghdr::Type::Png) => ".png",
@@ -81,7 +81,7 @@ pub async fn home_post(
                 return Ok(response);
             }
         };
-        let filename = format!("{fileid}.{ext}");
+        filename.push_str(ext);
         Some(InsertImage {
             bytes,
             directory: state.cfg.image_path.clone(),

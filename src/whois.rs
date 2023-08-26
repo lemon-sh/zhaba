@@ -1,5 +1,3 @@
-use std::net::SocketAddr;
-
 use color_eyre::{eyre::eyre, Result};
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
@@ -12,12 +10,13 @@ pub struct WhoisResult {
     pub mnt: String,
 }
 
-pub async fn whois(server: SocketAddr, query: &str) -> Result<Option<WhoisResult>> {
+pub async fn whois(server: &str, query: &str) -> Result<Option<WhoisResult>> {
     let mut stream = TcpStream::connect(server).await?;
     let (read, mut write) = stream.split();
     let mut lines = BufReader::new(read).lines();
 
     write.write_all(query.as_bytes()).await?;
+    write.write(&[b'\n']).await?;
 
     loop {
         if let Some(line) = lines.next_line().await? {

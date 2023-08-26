@@ -32,6 +32,7 @@ pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore)
         .route("/", get(home::home_get))
         .route("/", post(home::home_post))
         .route("/static/*file", get(static_files::static_handler))
+        .route("/img/*file", get(static_files::image_handler))
         .fallback_service(get(|| async { error::http_404() }))
         .layer(SessionLayer::new(store, &secret))
         .with_state(AppState { db, cfg });
