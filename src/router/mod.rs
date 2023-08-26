@@ -29,8 +29,8 @@ pub struct AppState {
 pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore) -> Result<Router> {
     let secret = base64::decode_config(&cfg.cookie_secret, URL_SAFE_NO_PAD)?;
     let router = Router::new()
-        .route("/", get(home::home_get))
-        .route("/", post(home::home_post))
+        .route("/", get(home::handle_home))
+        .route("/add", post(home::handle_add))
         .route("/static/*file", get(static_files::static_handler))
         .route("/img/*file", get(static_files::image_handler))
         .fallback_service(get(|| async { error::http_404() }))

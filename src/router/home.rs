@@ -4,10 +4,11 @@ use axum::{
     body::{Body, Bytes},
     extract::{Multipart, Query, State},
     http::{Response, StatusCode},
-    response::IntoResponse,
+    response::{IntoResponse, Redirect},
     TypedHeader,
 };
 
+use axum_sessions::extractors::WritableSession;
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
@@ -29,8 +30,9 @@ pub struct PageQuery {
     p: Option<usize>,
 }
 
-pub async fn home_get(
+pub async fn handle_home(
     State(state): State<AppState>,
+    mut session: WritableSession,
     Query(query): Query<PageQuery>,
 ) -> Result<impl IntoResponse, Response<Body>> {
     let page = query.p.unwrap_or(0);
@@ -39,14 +41,16 @@ pub async fn home_get(
         .posts_display(page * PAGE_SIZE, PAGE_SIZE)
         .await
         .map_err(error::err_into_500)?;
-    Ok(templates::Index {
-        posts,
-        ..Default::default()
-    })
+    let flash = session.get("flash").unwrap_or_default();
+    if matches!(flash, Flash::None) {
+        session.remove("flash");
+    }
+    Ok(templates::Index { posts, flash })
 }
 
-pub async fn home_post(
+pub async fn handle_add(
     State(state): State<AppState>,
+    mut session: WritableSession,
     TypedHeader(xforwardedfor): TypedHeader<headers::XForwardedFor>,
     mp: Multipart,
 ) -> Result<impl IntoResponse, Response<Body>> {
@@ -65,13 +69,6 @@ pub async fn home_post(
         .await
         .map_err(error::err_into_500)?;
 
-    // for display
-    let posts = state
-        .db
-        .posts_display(0, PAGE_SIZE)
-        .await
-        .map_err(error::err_into_500)?;
-
     let image = if let Some(bytes) = image {
         let mut filename = Alphanumeric.sample_string(&mut thread_rng(), 32);
         // TODO: rewrite imghdr as a module of this project, it's dead simple
@@ -81,6 +78,12 @@ pub async fn home_post(
             Some(imghdr::Type::Gif) => ".gif",
             Some(imghdr::Type::Webp) => ".webp",
             _ => {
+                let posts = state
+                    .db
+                    .posts_display(0, PAGE_SIZE)
+                    .await
+                    .map_err(error::err_into_500)?;
+
                 let flash = Flash::Error("Image format not supported".into());
                 let mut response = templates::Index { flash, posts }.into_response();
                 *response.status_mut() = StatusCode::BAD_REQUEST;
@@ -103,8 +106,13 @@ pub async fn home_post(
         .await
         .map_err(error::err_into_500)?;
 
-    let flash = Flash::Success("Post was added successfully".into());
-    Ok(templates::Index { flash, posts }.into_response())
+    session
+        .insert(
+            "flash",
+            Flash::Success("Post was added successfully".into()),
+        )
+        .unwrap();
+    Ok(Redirect::to("/").into_response())
 }
 
 async fn read_post_mp(mut mp: Multipart) -> color_eyre::Result<(Option<String>, Option<Bytes>)> {

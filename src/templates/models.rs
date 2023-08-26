@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use serde::{Deserialize, Serialize};
+
 use crate::whois::WhoisResult;
 
 #[derive(Debug)]
@@ -12,6 +14,7 @@ pub struct Post {
     pub time: String,
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum Flash {
     Success(Cow<'static, str>),
     Error(Cow<'static, str>),
