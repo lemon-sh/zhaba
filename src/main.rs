@@ -1,6 +1,5 @@
-use std::{env, str::FromStr, sync::Arc, thread, time::Duration, net::SocketAddr};
+use std::{env, net::SocketAddr, str::FromStr, sync::Arc, thread, time::Duration};
 
-use axum::ServiceExt;
 use axum_sessions::async_session::{
     self,
     base64::{display::Base64Display, URL_SAFE_NO_PAD},

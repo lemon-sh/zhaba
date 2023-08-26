@@ -9,7 +9,7 @@ pub struct Config {
     pub image_path: PathBuf,
     pub db: Option<String>,
     pub cookie_secret: String,
-    pub whois_server: SocketAddr
+    pub whois_server: SocketAddr,
 }
 
 impl Config {

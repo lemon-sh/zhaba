@@ -1,38 +1,70 @@
 use std::net::SocketAddr;
 
-use axum::{extract::{State, Query, Multipart, ConnectInfo}, http::{Response, StatusCode}, body::{Body, Bytes}, response::IntoResponse};
-use axum_sessions::async_session::base64::{display::Base64Display, URL_SAFE_NO_PAD};
-use rand::{thread_rng, RngCore, distributions::{Alphanumeric, DistString}};
+use axum::{
+    body::{Body, Bytes},
+    extract::{ConnectInfo, Multipart, Query, State},
+    http::{Response, StatusCode},
+    response::IntoResponse,
+};
+
+use rand::{
+    distributions::{Alphanumeric, DistString},
+    thread_rng,
+};
 use serde::Deserialize;
 
-use crate::{templates::{self, models::{Post, Flash}}, database::{ExecutorConnection, InsertImage}, whois::{WhoisResult, self}};
+use crate::{
+    database::InsertImage,
+    templates::{self, models::Flash},
+    whois::{self},
+};
 
-use super::{AppState, error};
+use super::{error, AppState};
 
 const PAGE_SIZE: usize = 25;
 
 #[derive(Deserialize)]
 pub struct PageQuery {
-    p: Option<usize>
+    p: Option<usize>,
 }
 
-pub async fn home_get(State(state): State<AppState>, Query(query): Query<PageQuery>) -> Result<impl IntoResponse, Response<Body>> {
+pub async fn home_get(
+    State(state): State<AppState>,
+    Query(query): Query<PageQuery>,
+) -> Result<impl IntoResponse, Response<Body>> {
     let page = query.p.unwrap_or(0);
-    let posts = state.db.posts_display(page*PAGE_SIZE, PAGE_SIZE).await.map_err(error::err_into_500)?;
-    Ok(templates::Index { posts, ..Default::default() })
+    let posts = state
+        .db
+        .posts_display(page * PAGE_SIZE, PAGE_SIZE)
+        .await
+        .map_err(error::err_into_500)?;
+    Ok(templates::Index {
+        posts,
+        ..Default::default()
+    })
 }
 
-pub async fn home_post(State(state): State<AppState>, ConnectInfo(addr): ConnectInfo<SocketAddr>, mp: Multipart) -> Result<impl IntoResponse, Response<Body>> {
+pub async fn home_post(
+    State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    mp: Multipart,
+) -> Result<impl IntoResponse, Response<Body>> {
     let (content, image) = read_post_mp(mp).await.map_err(error::err_into_500)?;
     let Some(content) = content else {
         return Err(error::http_400())
     };
 
     let ip = addr.ip().to_string();
-    let whois = whois::whois(state.cfg.whois_server, ip.as_str()).await.map_err(error::err_into_500)?;
+    let whois = whois::whois(state.cfg.whois_server, ip.as_str())
+        .await
+        .map_err(error::err_into_500)?;
 
     // for display
-    let posts = state.db.posts_display(0, PAGE_SIZE).await.map_err(error::err_into_500)?;
+    let posts = state
+        .db
+        .posts_display(0, PAGE_SIZE)
+        .await
+        .map_err(error::err_into_500)?;
 
     let image = if let Some(bytes) = image {
         let fileid = Alphanumeric.sample_string(&mut thread_rng(), 32);
@@ -46,8 +78,8 @@ pub async fn home_post(State(state): State<AppState>, ConnectInfo(addr): Connect
                 let flash = Flash::Error("Image format not supported".into());
                 let mut response = templates::Index { flash, posts }.into_response();
                 *response.status_mut() = StatusCode::BAD_REQUEST;
-                return Ok(response)
-            },
+                return Ok(response);
+            }
         };
         let filename = format!("{fileid}.{ext}");
         Some(InsertImage {
@@ -55,10 +87,16 @@ pub async fn home_post(State(state): State<AppState>, ConnectInfo(addr): Connect
             directory: state.cfg.image_path.clone(),
             filename,
         })
-    } else { None };
+    } else {
+        None
+    };
 
-    state.db.post_insert(content, ip, whois, image).await.map_err(error::err_into_500)?;
-    
+    state
+        .db
+        .post_insert(content, ip, whois, image)
+        .await
+        .map_err(error::err_into_500)?;
+
     let flash = Flash::Success("Post was added successfully".into());
     Ok(templates::Index { flash, posts }.into_response())
 }

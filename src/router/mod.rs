@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use axum::{routing::{get, post}, Router, extract::{State, Query, Multipart}, body::Body, response::{IntoResponse, Response}, Form};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use axum_sessions::{
     async_session::{
         base64::{self, URL_SAFE_NO_PAD},
@@ -9,9 +12,8 @@ use axum_sessions::{
     SessionLayer,
 };
 use color_eyre::Result;
-use serde::Deserialize;
 
-use crate::{config::Config, database::ExecutorConnection, templates};
+use crate::{config::Config, database::ExecutorConnection};
 
 mod error;
 mod static_files;
@@ -21,7 +23,7 @@ mod home;
 #[derive(Clone)]
 pub struct AppState {
     db: ExecutorConnection,
-    cfg: Arc<Config>
+    cfg: Arc<Config>,
 }
 
 pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore) -> Result<Router> {

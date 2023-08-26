@@ -1,12 +1,15 @@
 use std::net::SocketAddr;
 
-use color_eyre::{Result, eyre::eyre};
-use tokio::{net::TcpStream, io::{BufReader, AsyncBufReadExt, AsyncWriteExt}};
+use color_eyre::{eyre::eyre, Result};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    net::TcpStream,
+};
 
 #[derive(Debug)]
 pub struct WhoisResult {
     pub asn: u32,
-    pub mnt: String
+    pub mnt: String,
 }
 
 pub async fn whois(server: SocketAddr, query: &str) -> Result<Option<WhoisResult>> {
@@ -22,7 +25,7 @@ pub async fn whois(server: SocketAddr, query: &str) -> Result<Option<WhoisResult
                 break;
             }
         } else {
-            return Ok(None)
+            return Ok(None);
         }
     }
 
@@ -33,7 +36,10 @@ pub async fn whois(server: SocketAddr, query: &str) -> Result<Option<WhoisResult
         if let Some((key, value)) = line.split_once(':') {
             match key {
                 "origin" => {
-                    let asnstr = value.trim().get(2..).ok_or_else(|| eyre!("Invalid ASN format from whois: {value}"))?;
+                    let asnstr = value
+                        .trim()
+                        .get(2..)
+                        .ok_or_else(|| eyre!("Invalid ASN format from whois: {value}"))?;
                     asn = Some(asnstr.parse()?)
                 }
                 "mnt-by" => mnt = Some(value.trim().to_string()),
@@ -41,7 +47,7 @@ pub async fn whois(server: SocketAddr, query: &str) -> Result<Option<WhoisResult
             }
         }
     }
-    
+
     if let (Some(asn), Some(mnt)) = (asn, mnt) {
         Ok(Some(WhoisResult { asn, mnt }))
     } else {

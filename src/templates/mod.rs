@@ -1,6 +1,6 @@
 use askama::Template;
 
-use self::models::{Post, Flash};
+use self::models::{Flash, Post};
 
 pub mod models;
 
@@ -8,5 +8,5 @@ pub mod models;
 #[template(path = "index.html")]
 pub struct Index {
     pub flash: Flash,
-    pub posts: Vec<Post>
+    pub posts: Vec<Post>,
 }
