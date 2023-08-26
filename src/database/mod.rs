@@ -1,8 +1,9 @@
+use core::fmt;
 use std::{fs::OpenOptions, io::Write, path::PathBuf, time::Instant};
 
 use axum::body::Bytes;
-use chrono::{DateTime, Utc};
-use color_eyre::Result;
+use chrono::NaiveDateTime;
+use color_eyre::{Result, eyre::eyre};
 use rusqlite::params;
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
@@ -62,11 +63,16 @@ macro_rules! generate_executor {
     };
 }
 
-#[derive(Debug)]
 pub struct InsertImage {
     pub bytes: Bytes,
     pub directory: PathBuf,
     pub filename: String,
+}
+
+impl fmt::Debug for InsertImage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InsertImage").field("bytes", &"...").field("directory", &self.directory).field("filename", &self.filename).finish()
+    }
 }
 
 generate_executor! {
@@ -91,13 +97,14 @@ generate_executor! {
         Ok(())
     }
 
-    GetPosts / posts_display, (db, offset: usize, page_size: usize) => rusqlite::Result<Vec<models::Post>> {
+    GetPosts / posts_display, (db, offset: usize, page_size: usize) => Result<Vec<models::Post>> {
         let mut stmt = db.prepare_cached(queries::SELECT_POSTS)?;
         let mut rows = stmt.query([offset, page_size])?;
 
         let mut posts = Vec::new();
         while let Some(row) = rows.next()? {
-            let time: DateTime<Utc> = row.get(6)?;
+            let timestamp = row.get(6)?;
+            let time = NaiveDateTime::from_timestamp_opt(timestamp, 0).ok_or_else(|| eyre!("Invalid timestamp {timestamp}"))?;
             let time = time.format("%Y-%m-%d %H:%m").to_string();
             let whois = if let (Some(asn), Some(mnt)) = (row.get(4)?, row.get(5)?) {
                 Some(WhoisResult { asn, mnt })
