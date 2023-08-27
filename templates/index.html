@@ -16,20 +16,6 @@
 </details>
 
 <ul>
-    {% for post in posts %}
-        <li>
-            {{ post.id }}, {{ post.time }}, {{ post.ip }}:<br>
-            {% match post.whois %}
-                {% when Some with (whois) %}
-                    {{ whois.asn }}, {{ whois.mnt }}<br>
-                {% when None %}
-            {% endmatch %}
-            {{ post.content }}
-            {% if let Some(filename) = post.image %}
-                <br><img src="/img/{{ filename }}">
-            {% endif %}
-            <br><br>
-        </li>
-    {% endfor %}
+
 </ul>
 {% endblock %}

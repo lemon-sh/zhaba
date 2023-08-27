@@ -10,6 +10,7 @@ pub struct Config {
     pub db: Option<String>,
     pub cookie_secret: String,
     pub whois_server: String,
+    pub page_size: u32,
 }
 
 impl Config {

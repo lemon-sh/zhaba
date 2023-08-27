@@ -1,14 +1,15 @@
-use std::net::Ipv4Addr;
+use std::{net::Ipv4Addr, str::FromStr};
 
 use axum::{
     body::{Body, Bytes},
-    extract::{Multipart, Query, State},
+    extract::{Multipart, Path, Query, State},
     http::{Response, StatusCode},
     response::{IntoResponse, Redirect},
     TypedHeader,
 };
 
 use axum_sessions::extractors::WritableSession;
+use chrono::NaiveDate;
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
@@ -23,37 +24,20 @@ use crate::{
 
 use super::{error, headers, AppState};
 
-const PAGE_SIZE: usize = 25;
-
-#[derive(Deserialize)]
-pub struct PageQuery {
-    p: Option<usize>,
-}
-
 pub async fn handle_home(
     State(state): State<AppState>,
-    mut session: WritableSession,
-    Query(query): Query<PageQuery>,
 ) -> Result<impl IntoResponse, Response<Body>> {
-    let page = query.p.unwrap_or(0);
-    let posts = state
-        .db
-        .posts_display(page * PAGE_SIZE, PAGE_SIZE)
-        .await
-        .map_err(error::err_into_500)?;
-    let flash = session.get("flash").unwrap_or_default();
-    if matches!(flash, Flash::None) {
-        session.remove("flash");
-    }
-    Ok(templates::Index { posts, flash })
+    let boards = state.db.get_boards().await.map_err(error::err_into_500)?;
+    Ok(templates::Index { boards })
 }
 
-pub async fn handle_add(
+pub async fn handle_post(
     State(state): State<AppState>,
+    Path(board_name): Path<String>,
     mut session: WritableSession,
     TypedHeader(xforwardedfor): TypedHeader<headers::XForwardedFor>,
     mp: Multipart,
-) -> Result<impl IntoResponse, Response<Body>> {
+) -> impl IntoResponse {
     let (content, image) = read_post_mp(mp).await.map_err(error::err_into_500)?;
     let Some(content) = content else {
         return Err(error::http_400())
@@ -80,12 +64,23 @@ pub async fn handle_add(
             _ => {
                 let posts = state
                     .db
-                    .posts_display(0, PAGE_SIZE)
+                    .posts_display(board_name.clone(), state.cfg.page_size)
+                    .await
+                    .map_err(error::err_into_500)?;
+
+                let board = state
+                    .db
+                    .get_board_metadata(board_name)
                     .await
                     .map_err(error::err_into_500)?;
 
                 let flash = Flash::Error("Image format not supported".into());
-                let mut response = templates::Index { flash, posts }.into_response();
+                let mut response = templates::Posts {
+                    board,
+                    flash,
+                    posts,
+                }
+                .into_response();
                 *response.status_mut() = StatusCode::BAD_REQUEST;
                 return Ok(response);
             }
@@ -100,9 +95,11 @@ pub async fn handle_add(
         None
     };
 
+    let redirect_uri = format!("/{board_name}");
+
     state
         .db
-        .post_insert(content, ip, whois, image)
+        .post_insert(board_name, content, ip, whois, image)
         .await
         .map_err(error::err_into_500)?;
 
@@ -112,7 +109,53 @@ pub async fn handle_add(
             Flash::Success("Post was added successfully".into()),
         )
         .unwrap();
-    Ok(Redirect::to("/").into_response())
+    Ok(Redirect::to(&redirect_uri).into_response())
+}
+
+#[derive(Deserialize)]
+pub struct DateRangeQuery {
+    s: Option<String>,
+    e: Option<String>,
+}
+
+pub async fn handle_view(
+    State(state): State<AppState>,
+    mut session: WritableSession,
+    Path(board_name): Path<String>,
+    range: Query<DateRangeQuery>,
+) -> impl IntoResponse {
+    let flash = session.get("flash").unwrap_or_default();
+    if !matches!(flash, Flash::None) {
+        session.remove("flash");
+    }
+    let board = state
+        .db
+        .get_board_metadata(board_name.clone())
+        .await
+        .map_err(error::err_into_500)?;
+    let posts = if let (Some(start), Some(end)) = (&range.s, &range.e) {
+        let Ok(start) = NaiveDate::from_str(start) else { return Err(error::http_400()) };
+        let Ok(end) = NaiveDate::from_str(end) else { return Err(error::http_400()) };
+        let start_ts = start.and_hms_opt(23, 59, 59).unwrap().timestamp() as u64;
+        let end_ts = end.and_hms_opt(23, 59, 59).unwrap().timestamp() as u64;
+        state
+            .db
+            .posts_display_range(board_name, start_ts..end_ts, state.cfg.page_size)
+            .await
+            .map_err(error::err_into_500)?
+    } else {
+        state
+            .db
+            .posts_display(board_name, state.cfg.page_size)
+            .await
+            .map_err(error::err_into_500)?
+    };
+
+    Ok(templates::Posts {
+        board,
+        flash,
+        posts,
+    })
 }
 
 async fn read_post_mp(mut mp: Multipart) -> color_eyre::Result<(Option<String>, Option<Bytes>)> {

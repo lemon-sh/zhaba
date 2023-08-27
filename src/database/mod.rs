@@ -1,10 +1,10 @@
 use core::fmt;
-use std::{fs::OpenOptions, io::Write, path::PathBuf, time::Instant};
+use std::{fs::OpenOptions, io::Write, ops::Range, path::PathBuf, time::Instant};
 
 use axum::body::Bytes;
 use chrono::NaiveDateTime;
 use color_eyre::{eyre::eyre, Result};
-use rusqlite::params;
+use rusqlite::{params, Rows};
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     oneshot,
@@ -80,7 +80,7 @@ impl fmt::Debug for InsertImage {
 }
 
 generate_executor! {
-    AddPost / post_insert, (db, content: String, ip: String, whois: Option<WhoisResult>, image: Option<InsertImage>) => Result<()> {
+    AddPost / post_insert, (db, board: String, content: String, ip: String, whois: Option<WhoisResult>, image: Option<InsertImage>) => Result<()> {
         let (asn, mnt) = if let Some(whois) = whois {
             (Some(whois.asn), Some(whois.mnt))
         } else {
@@ -91,40 +91,68 @@ generate_executor! {
             let mut stmt = tx.prepare_cached(queries::INSERT_POST)?;
             let path = image.directory.join(&image.filename);
             OpenOptions::new().write(true).truncate(true).create_new(true).open(path)?.write_all(&image.bytes)?;
-            stmt.execute(params![content, Some(image.filename), ip, asn, mnt])?;
+            stmt.execute(params![content, Some(image.filename), ip, asn, mnt, board])?;
             drop(stmt);
             tx.commit()?;
         } else {
             let mut stmt = db.prepare_cached(queries::INSERT_POST)?;
-            stmt.execute(params![content, <Option<String>>::None, ip, asn, mnt])?;
+            stmt.execute(params![content, <Option<String>>::None, ip, asn, mnt, board])?;
         }
         Ok(())
     }
 
-    GetPosts / posts_display, (db, offset: usize, page_size: usize) => Result<Vec<models::Post>> {
-        let mut stmt = db.prepare_cached(queries::SELECT_POSTS)?;
-        let mut rows = stmt.query([offset, page_size])?;
+    GetPosts / posts_display, (db, board: String, limit: u32) => Result<Vec<models::Post>> {
+        let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD)?;
+        let rows = stmt.query(params![board, limit])?;
 
-        let mut posts = Vec::new();
-        while let Some(row) = rows.next()? {
-            let timestamp = row.get(6)?;
-            let time = NaiveDateTime::from_timestamp_opt(timestamp, 0).ok_or_else(|| eyre!("Invalid timestamp {timestamp}"))?;
-            let time = time.format("%Y-%m-%d %H:%m").to_string();
-            let whois = if let (Some(asn), Some(mnt)) = (row.get(4)?, row.get(5)?) {
-                Some(WhoisResult { asn, mnt })
-            } else {
-                None
-            };
-            posts.push(models::Post {
-                id: row.get(0)?,
-                content: row.get(1)?,
-                image: row.get(2)?,
-                ip: row.get(3)?,
-                whois,
-                time
-            });
-        }
-
-        Ok(posts)
+        posts_from_rows(rows)
     }
+
+    GetPostsInRange / posts_display_range, (db, board: String, range: Range<u64>, limit: u32) => Result<Vec<models::Post>> {
+        let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD_RANGE)?;
+        let rows = stmt.query(params![board, range.start, range.end, limit])?;
+
+        posts_from_rows(rows)
+    }
+
+    GetBoards / get_boards, (db,) => Result<Vec<models::Board>> {
+        let mut stmt = db.prepare_cached(queries::SELECT_BOARDS)?;
+        let mut rows = stmt.query([])?;
+        let mut boards = Vec::new();
+        while let Some(row) = rows.next()? {
+            boards.push(models::Board { name: row.get(0)?, description: row.get(1)?, color: row.get(2)? });
+        }
+        Ok(boards)
+    }
+
+    GetBoardMetadata / get_board_metadata, (db, board: String) => Result<models::Board> {
+        let mut stmt = db.prepare_cached(queries::SELECT_BOARD_METADATA)?;
+        let name = board.clone();
+        let board = stmt.query_row([board], |r| Ok(models::Board { name, description: r.get(0)?, color: r.get(1)? }))?;
+        Ok(board)
+    }
+}
+
+fn posts_from_rows(mut rows: Rows) -> Result<Vec<models::Post>> {
+    let mut posts = Vec::new();
+    while let Some(row) = rows.next()? {
+        let timestamp = row.get(6)?;
+        let time = NaiveDateTime::from_timestamp_opt(timestamp, 0)
+            .ok_or_else(|| eyre!("Invalid timestamp {timestamp}"))?;
+        let time = time.format("%Y-%m-%d %H:%m").to_string();
+        let whois = if let (Some(asn), Some(mnt)) = (row.get(4)?, row.get(5)?) {
+            Some(WhoisResult { asn, mnt })
+        } else {
+            None
+        };
+        posts.push(models::Post {
+            id: row.get(0)?,
+            content: row.get(1)?,
+            image: row.get(2)?,
+            ip: row.get(3)?,
+            whois,
+            time,
+        });
+    }
+    Ok(posts)
 }

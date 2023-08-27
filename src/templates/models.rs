@@ -14,6 +14,13 @@ pub struct Post {
     pub time: String,
 }
 
+#[derive(Debug)]
+pub struct Board {
+    pub name: String,
+    pub description: String,
+    pub color: u32,
+}
+
 #[derive(Serialize, Deserialize)]
 pub enum Flash {
     Success(Cow<'static, str>),
