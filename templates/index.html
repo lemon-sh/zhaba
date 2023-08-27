@@ -3,19 +3,13 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-
-<details>
-    <summary>Add post</summary>
-    <form action="/" method="post" enctype="multipart/form-data">
-        <textarea name="content"></textarea><br>
-        <label for="image">Attach an image (optional):</label>
-        <input type="file" accept="image/*" name="image" id="image"></label>
-        <br>
-        <button>click to shitpost</button>
-    </form>
-</details>
-
 <ul>
-
+{% for board in boards %}
+<li>
+    <a href="{{ board.name }}">
+        <span style="color: #{{ "{:06x}"|format(board.color) }}">/{{ board.name }}/</span> - {{ board.description }}
+    </a>
+</li>
+{% endfor %}
 </ul>
 {% endblock %}
