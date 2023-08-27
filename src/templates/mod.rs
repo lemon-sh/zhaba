@@ -1,7 +1,5 @@
 use askama::Template;
 
-use self::models::{Board, Flash};
-
 pub mod models;
 
 #[derive(Template)]
@@ -13,7 +11,7 @@ pub struct Index {
 #[derive(Template)]
 #[template(path = "posts.html")]
 pub struct Posts {
-    pub flash: Flash,
-    pub board: Board,
+    pub flash: models::Flash,
+    pub board: models::Board,
     pub posts: Vec<models::Post>,
 }

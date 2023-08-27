@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{get, post},
     Router,
 };
@@ -36,6 +37,7 @@ pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore)
         .route("/img/*file", get(static_files::image_handler))
         .fallback_service(get(|| async { error::http_404() }))
         .layer(SessionLayer::new(store, &secret))
+        .layer(DefaultBodyLimit::max(cfg.max_upload_size))
         .with_state(AppState { db, cfg });
     Ok(router)
 }

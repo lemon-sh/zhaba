@@ -43,6 +43,35 @@ pub async fn handle_post(
     let Some(content) = content else {
         return Err(error::http_400())
     };
+    if content.len() > state.cfg.max_post_length {
+        let posts = state
+            .db
+            .posts_display(board_name.clone(), state.cfg.page_size)
+            .await
+            .map_err(error::err_into_500)?;
+
+        let board = state
+            .db
+            .get_board_metadata(board_name)
+            .await
+            .map_err(error::err_into_500)?;
+
+        let flash = Flash::Error(
+            format!(
+                "Post text is too long (limit is {})",
+                state.cfg.max_post_length
+            )
+            .into(),
+        );
+        let mut response = templates::Posts {
+            board,
+            flash,
+            posts,
+        }
+        .into_response();
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        return Ok(response);
+    }
 
     let ip = xforwardedfor
         .0
