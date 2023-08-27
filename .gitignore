@@ -1,4 +1,5 @@
 /target
-/zhaba.db3
+/zhaba.db3*
 /zhaba.toml
 /imgs
+/.idea

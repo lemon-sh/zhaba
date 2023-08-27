@@ -18,6 +18,7 @@ use crate::database::DbExecutor;
 
 mod config;
 mod database;
+mod imghdr;
 mod router;
 mod templates;
 mod whois;

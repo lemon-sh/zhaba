@@ -10,11 +10,11 @@ static X_FORWARDED_FOR: HeaderName = HeaderName::from_static("x-forwarded-for");
 pub struct XForwardedFor(pub Vec<IpAddr>);
 
 impl Header for XForwardedFor {
-    fn name() -> &'static axum::http::HeaderName {
+    fn name() -> &'static HeaderName {
         &X_FORWARDED_FOR
     }
 
-    fn decode<'i, I>(values: &mut I) -> Result<Self, axum::headers::Error>
+    fn decode<'i, I>(values: &mut I) -> Result<Self, Error>
     where
         Self: Sized,
         I: Iterator<Item = &'i axum::http::HeaderValue>,

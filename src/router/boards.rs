@@ -18,6 +18,7 @@ use serde::Deserialize;
 
 use crate::{
     database::InsertImage,
+    imghdr,
     templates::{self, models::Flash},
     whois::{self},
 };
@@ -54,43 +55,37 @@ pub async fn handle_post(
         .map_err(error::err_into_500)?;
 
     let image = if let Some(bytes) = image {
-        let mut filename = Alphanumeric.sample_string(&mut thread_rng(), 32);
-        // TODO: rewrite imghdr as a module of this project, it's dead simple
-        let ext = match imghdr::from_bytes(&bytes) {
-            Some(imghdr::Type::Png) => ".png",
-            Some(imghdr::Type::Jpeg) => ".jpg",
-            Some(imghdr::Type::Gif) => ".gif",
-            Some(imghdr::Type::Webp) => ".webp",
-            _ => {
-                let posts = state
-                    .db
-                    .posts_display(board_name.clone(), state.cfg.page_size)
-                    .await
-                    .map_err(error::err_into_500)?;
+        if let Some(ext) = imghdr::imghdr(&bytes) {
+            let mut filename = Alphanumeric.sample_string(&mut thread_rng(), 32);
+            filename.push_str(ext);
+            Some(InsertImage {
+                bytes,
+                directory: state.cfg.image_path.clone(),
+                filename,
+            })
+        } else {
+            let posts = state
+                .db
+                .posts_display(board_name.clone(), state.cfg.page_size)
+                .await
+                .map_err(error::err_into_500)?;
 
-                let board = state
-                    .db
-                    .get_board_metadata(board_name)
-                    .await
-                    .map_err(error::err_into_500)?;
+            let board = state
+                .db
+                .get_board_metadata(board_name)
+                .await
+                .map_err(error::err_into_500)?;
 
-                let flash = Flash::Error("Image format not supported".into());
-                let mut response = templates::Posts {
-                    board,
-                    flash,
-                    posts,
-                }
-                .into_response();
-                *response.status_mut() = StatusCode::BAD_REQUEST;
-                return Ok(response);
+            let flash = Flash::Error("Image format not supported".into());
+            let mut response = templates::Posts {
+                board,
+                flash,
+                posts,
             }
-        };
-        filename.push_str(ext);
-        Some(InsertImage {
-            bytes,
-            directory: state.cfg.image_path.clone(),
-            filename,
-        })
+            .into_response();
+            *response.status_mut() = StatusCode::BAD_REQUEST;
+            return Ok(response);
+        }
     } else {
         None
     };
