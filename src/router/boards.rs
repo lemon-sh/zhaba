@@ -1,4 +1,4 @@
-use std::{net::Ipv4Addr, str::FromStr};
+use std::{borrow::Cow, net::Ipv4Addr, str::FromStr};
 
 use axum::{
     body::{Body, Bytes},
@@ -38,31 +38,25 @@ pub async fn handle_post(
     mut session: WritableSession,
     TypedHeader(xforwardedfor): TypedHeader<headers::XForwardedFor>,
     mp: Multipart,
-) -> impl IntoResponse {
-    let (content, image) = read_post_mp(mp).await.map_err(error::err_into_500)?;
-    let Some(content) = content else {
-        return Err(error::http_400())
-    };
-    if content.len() > state.cfg.max_post_length {
-        let posts = state
-            .db
-            .posts_display(board_name.clone(), state.cfg.page_size)
-            .await
-            .map_err(error::err_into_500)?;
-
+) -> Result<axum::response::Response, Response<Body>> {
+    async fn bad_request_and_flash(
+        state: &AppState,
+        board_name: String,
+        error: Cow<'static, str>,
+    ) -> Result<axum::response::Response, Response<Body>> {
         let board = state
             .db
-            .get_board_metadata(board_name)
+            .get_board_by_name(board_name)
             .await
             .map_err(error::err_into_500)?;
 
-        let flash = Flash::Error(
-            format!(
-                "Post text is too long (limit is {})",
-                state.cfg.max_post_length
-            )
-            .into(),
-        );
+        let posts = state
+            .db
+            .posts_display(board.id, state.cfg.page_size)
+            .await
+            .map_err(error::err_into_500)?;
+
+        let flash = Flash::Error(error);
         let mut response = templates::Posts {
             board,
             flash,
@@ -70,7 +64,28 @@ pub async fn handle_post(
         }
         .into_response();
         *response.status_mut() = StatusCode::BAD_REQUEST;
-        return Ok(response);
+        Ok(response)
+    }
+
+    let (content, image) = read_post_mp(mp).await.map_err(error::err_into_500)?;
+    let Some(content) = content else {
+        return Err(error::http_400())
+    };
+    if content.is_empty() {
+        return bad_request_and_flash(&state, board_name, "Post content cannot be empty".into())
+            .await;
+    }
+    if content.len() > state.cfg.max_post_length {
+        return bad_request_and_flash(
+            &state,
+            board_name,
+            format!(
+                "Post content too long (max {} chars)",
+                state.cfg.max_post_length
+            )
+            .into(),
+        )
+        .await;
     }
 
     let ip = xforwardedfor
@@ -84,7 +99,9 @@ pub async fn handle_post(
         .map_err(error::err_into_500)?;
 
     let image = if let Some(bytes) = image {
-        if let Some(ext) = imghdr::imghdr(&bytes) {
+        if bytes.is_empty() {
+            None
+        } else if let Some(ext) = imghdr::imghdr(&bytes) {
             let mut filename = Alphanumeric.sample_string(&mut thread_rng(), 32);
             filename.push_str(ext);
             Some(InsertImage {
@@ -93,27 +110,12 @@ pub async fn handle_post(
                 filename,
             })
         } else {
-            let posts = state
-                .db
-                .posts_display(board_name.clone(), state.cfg.page_size)
-                .await
-                .map_err(error::err_into_500)?;
-
-            let board = state
-                .db
-                .get_board_metadata(board_name)
-                .await
-                .map_err(error::err_into_500)?;
-
-            let flash = Flash::Error("Image format not supported".into());
-            let mut response = templates::Posts {
-                board,
-                flash,
-                posts,
-            }
-            .into_response();
-            *response.status_mut() = StatusCode::BAD_REQUEST;
-            return Ok(response);
+            return bad_request_and_flash(
+                &state,
+                board_name,
+                "Image format not supported or invalid image".into(),
+            )
+            .await;
         }
     } else {
         None
@@ -154,7 +156,7 @@ pub async fn handle_view(
     }
     let board = state
         .db
-        .get_board_metadata(board_name.clone())
+        .get_board_by_name(board_name)
         .await
         .map_err(error::err_into_500)?;
     let posts = if let (Some(start), Some(end)) = (&range.s, &range.e) {
@@ -164,16 +166,18 @@ pub async fn handle_view(
         let end_ts = end.and_hms_opt(23, 59, 59).unwrap().timestamp() as u64;
         state
             .db
-            .posts_display_range(board_name, start_ts..end_ts, state.cfg.page_size)
+            .posts_display_range(board.id, start_ts..end_ts, state.cfg.page_size)
             .await
             .map_err(error::err_into_500)?
     } else {
         state
             .db
-            .posts_display(board_name, state.cfg.page_size)
+            .posts_display(board.id, state.cfg.page_size)
             .await
             .map_err(error::err_into_500)?
     };
+
+    println!("board {board:?} posts {posts:?}");
 
     Ok(templates::Posts {
         board,

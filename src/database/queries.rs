@@ -5,5 +5,5 @@ pub static SELECT_POSTS_BOARD: &str =
 pub static SELECT_POSTS_BOARD_RANGE: &str = "select id,content,image,ip,asn,mnt,time from posts where board = ? and time between ? and ? order by time desc limit ?";
 
 pub static INSERT_BOARD: &str = "insert into boards(name,description,color) values(?,?,?)";
-pub static SELECT_BOARDS: &str = "select name,description,color from boards";
-pub static SELECT_BOARD_METADATA: &str = "select description,color from boards where name = ?";
+pub static SELECT_BOARDS: &str = "select * from boards";
+pub static SELECT_BOARD_BY_NAME: &str = "select * from boards where name = ?";

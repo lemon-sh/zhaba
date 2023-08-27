@@ -16,6 +16,7 @@ pub struct Post {
 
 #[derive(Debug)]
 pub struct Board {
+    pub id: i64,
     pub name: String,
     pub description: String,
     pub color: u32,

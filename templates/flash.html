@@ -1,0 +1,7 @@
+{% match flash %}
+    {% when Flash::Success with (val) %}
+    <p style="color: lightgreen">{{ val }}</p>
+    {% when Flash::Error with (val) %}
+    <p style="color: lightcoral">{{ val }}</p>
+    {% when Flash::None %}
+{% endmatch %}

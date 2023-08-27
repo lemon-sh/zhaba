@@ -101,14 +101,14 @@ generate_executor! {
         Ok(())
     }
 
-    GetPosts / posts_display, (db, board: String, limit: u32) => Result<Vec<models::Post>> {
+    GetPosts / posts_display, (db, board: i64, limit: u32) => Result<Vec<models::Post>> {
         let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD)?;
         let rows = stmt.query(params![board, limit])?;
 
         posts_from_rows(rows)
     }
 
-    GetPostsInRange / posts_display_range, (db, board: String, range: Range<u64>, limit: u32) => Result<Vec<models::Post>> {
+    GetPostsInRange / posts_display_range, (db, board: i64, range: Range<u64>, limit: u32) => Result<Vec<models::Post>> {
         let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD_RANGE)?;
         let rows = stmt.query(params![board, range.start, range.end, limit])?;
 
@@ -120,15 +120,14 @@ generate_executor! {
         let mut rows = stmt.query([])?;
         let mut boards = Vec::new();
         while let Some(row) = rows.next()? {
-            boards.push(models::Board { name: row.get(0)?, description: row.get(1)?, color: row.get(2)? });
+            boards.push(models::Board { id: row.get(0)?, name: row.get(1)?, description: row.get(2)?, color: row.get(3)? });
         }
         Ok(boards)
     }
 
-    GetBoardMetadata / get_board_metadata, (db, board: String) => Result<models::Board> {
-        let mut stmt = db.prepare_cached(queries::SELECT_BOARD_METADATA)?;
-        let name = board.clone();
-        let board = stmt.query_row([board], |r| Ok(models::Board { name, description: r.get(0)?, color: r.get(1)? }))?;
+    GetBoardByName / get_board_by_name, (db, board: String) => Result<models::Board> {
+        let mut stmt = db.prepare_cached(queries::SELECT_BOARD_BY_NAME)?;
+        let board = stmt.query_row([board], |r| Ok(models::Board { id: r.get(0)?, name: r.get(1)?, description: r.get(2)?, color: r.get(3)? }))?;
         Ok(board)
     }
 }
