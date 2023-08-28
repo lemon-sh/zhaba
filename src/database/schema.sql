@@ -19,3 +19,5 @@ create table if not exists boards(
     description text not null,
     color integer not null
 );
+
+create index if not exists idx_board_time on posts(time, board);

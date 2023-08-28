@@ -1,17 +1,16 @@
-use std::{borrow::Cow, net::Ipv4Addr, str::FromStr};
-use std::sync::OnceLock;
+use std::{net::Ipv4Addr, sync::OnceLock};
 
 use axum::{
     body::{Body, Bytes},
     extract::{Multipart, Path, Query, State},
-    http::{Response, StatusCode},
+    http::Response,
     response::{IntoResponse, Redirect},
     TypedHeader,
 };
 
 use axum_sessions::extractors::WritableSession;
 use bbscope::{BBCode, BBCodeTagConfig};
-use chrono::NaiveDate;
+use chrono::{Datelike, Months, NaiveDate, Utc};
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
@@ -31,7 +30,14 @@ static BBCODE: OnceLock<BBCode> = OnceLock::new();
 
 fn init_bbcode() -> BBCode {
     let config = BBCodeTagConfig {
-        accepted_tags: vec!["b".into(), "i".into(), "sup".into(), "sub".into(), "u".into(), "s".into()],
+        accepted_tags: vec![
+            "b".into(),
+            "i".into(),
+            "sup".into(),
+            "sub".into(),
+            "u".into(),
+            "s".into(),
+        ],
         ..Default::default()
     };
     BBCode::from_config(config, None).unwrap()
@@ -50,54 +56,19 @@ pub async fn handle_post(
     mut session: WritableSession,
     TypedHeader(xforwardedfor): TypedHeader<headers::XForwardedFor>,
     mp: Multipart,
-) -> Result<axum::response::Response, Response<Body>> {
-    async fn bad_request_and_flash(
-        state: &AppState,
-        board_name: String,
-        error: Cow<'static, str>,
-    ) -> Result<axum::response::Response, Response<Body>> {
-        let board = state
-            .db
-            .get_board_by_name(board_name)
-            .await
-            .map_err(error::err_into_500)?;
-
-        let posts = state
-            .db
-            .posts_display(board.id, state.cfg.page_size)
-            .await
-            .map_err(error::err_into_500)?;
-
-        let flash = Flash::Error(error);
-        let mut response = templates::Posts {
-            board,
-            flash,
-            posts,
-        }
-        .into_response();
-        *response.status_mut() = StatusCode::BAD_REQUEST;
-        Ok(response)
-    }
-
+) -> Result<Redirect, Response<Body>> {
+    let redirect_uri = format!("/{board_name}");
     let (content, image) = read_post_mp(mp).await.map_err(error::err_into_500)?;
     let Some(content) = content else {
         return Err(error::http_400())
     };
     if content.is_empty() {
-        return bad_request_and_flash(&state, board_name, "Post content cannot be empty".into())
-            .await;
+        session.insert("flash", Flash::Error("Post content cannot be empty".into())).unwrap();
+        return Ok(Redirect::to(&redirect_uri))
     }
     if content.len() > state.cfg.max_post_length {
-        return bad_request_and_flash(
-            &state,
-            board_name,
-            format!(
-                "Post content too long (max {} chars)",
-                state.cfg.max_post_length
-            )
-            .into(),
-        )
-        .await;
+        session.insert("flash", Flash::Error(format!("Post content too long (max {} chars)", state.cfg.max_post_length).into())).unwrap();
+        return Ok(Redirect::to(&redirect_uri))
     }
     let content = BBCODE.get_or_init(init_bbcode).parse(&content);
 
@@ -123,18 +94,12 @@ pub async fn handle_post(
                 filename,
             })
         } else {
-            return bad_request_and_flash(
-                &state,
-                board_name,
-                "Image format not supported or invalid image".into(),
-            )
-            .await;
+            session.insert("flash", Flash::Error("Image format not supported or invalid image".into())).unwrap();
+            return Ok(Redirect::to(&redirect_uri))
         }
     } else {
         None
     };
-
-    let redirect_uri = format!("/{board_name}");
 
     state
         .db
@@ -148,13 +113,14 @@ pub async fn handle_post(
             Flash::Success("Post was added successfully".into()),
         )
         .unwrap();
-    Ok(Redirect::to(&redirect_uri).into_response())
+
+    Ok(Redirect::to(&redirect_uri))
 }
 
 #[derive(Deserialize)]
 pub struct DateRangeQuery {
-    s: Option<String>,
-    e: Option<String>,
+    y: Option<i32>,
+    m: Option<u32>,
 }
 
 pub async fn handle_view(
@@ -172,30 +138,31 @@ pub async fn handle_view(
         .get_board_by_name(board_name)
         .await
         .map_err(error::err_into_500)?;
-    let posts = if let (Some(start), Some(end)) = (&range.s, &range.e) {
-        let Ok(start) = NaiveDate::from_str(start) else { return Err(error::http_400()) };
-        let Ok(end) = NaiveDate::from_str(end) else { return Err(error::http_400()) };
-        let start_ts = start.and_hms_opt(23, 59, 59).unwrap().timestamp() as u64;
-        let end_ts = end.and_hms_opt(23, 59, 59).unwrap().timestamp() as u64;
-        state
-            .db
-            .posts_display_range(board.id, start_ts..end_ts, state.cfg.page_size)
-            .await
-            .map_err(error::err_into_500)?
-    } else {
-        state
-            .db
-            .posts_display(board.id, state.cfg.page_size)
-            .await
-            .map_err(error::err_into_500)?
-    };
 
-    println!("board {board:?} posts {posts:?}");
+    let now = Utc::now();
+    let year = range.y.unwrap_or_else(|| now.year());
+    let month = range.m.unwrap_or_else(|| now.month());
+
+    let Some(start) = NaiveDate::from_ymd_opt(year, month, 1) else { return Err(error::http_400()) };
+
+    let start_ts = start.and_hms_opt(0, 0, 0).unwrap().timestamp() as u64;
+    let end_ts = (start + Months::new(1))
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
+        .timestamp() as u64;
+
+    let posts = state
+        .db
+        .posts_display_range(board.id, start_ts..end_ts)
+        .await
+        .map_err(error::err_into_500)?;
 
     Ok(templates::Posts {
         board,
+        year,
         flash,
         posts,
+        month,
     })
 }
 

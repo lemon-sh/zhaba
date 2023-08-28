@@ -2,7 +2,7 @@ use core::fmt;
 use std::{fs::OpenOptions, io::Write, ops::Range, path::PathBuf, time::Instant};
 
 use axum::body::Bytes;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use color_eyre::{eyre::eyre, Result};
 use rusqlite::{params, Rows};
 use tokio::sync::{
@@ -101,16 +101,9 @@ generate_executor! {
         Ok(())
     }
 
-    GetPosts / posts_display, (db, board: i64, limit: u32) => Result<Vec<models::Post>> {
-        let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD)?;
-        let rows = stmt.query(params![board, limit])?;
-
-        posts_from_rows(rows)
-    }
-
-    GetPostsInRange / posts_display_range, (db, board: i64, range: Range<u64>, limit: u32) => Result<Vec<models::Post>> {
+    GetPostsInRange / posts_display_range, (db, board: i64, range: Range<u64>) => Result<Vec<models::Post>> {
         let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD_RANGE)?;
-        let rows = stmt.query(params![board, range.start, range.end, limit])?;
+        let rows = stmt.query(params![board, range.start, range.end])?;
 
         posts_from_rows(rows)
     }
@@ -138,7 +131,6 @@ fn posts_from_rows(mut rows: Rows) -> Result<Vec<models::Post>> {
         let timestamp = row.get(6)?;
         let time = NaiveDateTime::from_timestamp_opt(timestamp, 0)
             .ok_or_else(|| eyre!("Invalid timestamp {timestamp}"))?;
-        let time = time.format("%Y-%m-%d %H:%m").to_string();
         let whois = if let (Some(asn), Some(mnt)) = (row.get(4)?, row.get(5)?) {
             Some(WhoisResult { asn, mnt })
         } else {

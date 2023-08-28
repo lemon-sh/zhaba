@@ -15,6 +15,23 @@
     </form>
 </details>
 
+<form>
+    <label for="year">Year</label>
+    <select name="y" id="year">
+        {% let current_year = Utc::now().year() %}
+        {% for i in STARTING_YEAR..=current_year %}
+            <option value="{{ i }}" {% if i == year %}selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+    </select>
+    <label for="month">Month</label>
+    <select name="m" id="month">
+        {% for i in 1..12 %}
+            <option value="{{ i }}" {% if i == month %}selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+    </select>
+    <button>lessgo</button>
+</form>
+
 {% for post in posts %}
 <li>
     {{ post.id }}, {{ post.time }}, {{ post.ip }}:<br>

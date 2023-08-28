@@ -10,7 +10,6 @@ pub struct Config {
     pub db: Option<String>,
     pub cookie_secret: String,
     pub whois_server: String,
-    pub page_size: u32,
     pub max_upload_size: usize,
     pub max_post_length: usize,
 }

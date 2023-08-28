@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use chrono::NaiveDateTime;
 
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +12,7 @@ pub struct Post {
     pub image: Option<String>,
     pub ip: String,
     pub whois: Option<WhoisResult>,
-    pub time: String,
+    pub time: NaiveDateTime,
 }
 
 #[derive(Debug)]
