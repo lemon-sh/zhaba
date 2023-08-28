@@ -139,6 +139,10 @@ pub async fn handle_view(
         .await
         .map_err(error::err_into_500)?;
 
+    let Some(board) = board else {
+        return Err(error::http_404());
+    };
+
     let now = Utc::now();
     let year = range.y.unwrap_or_else(|| now.year());
     let month = range.m.unwrap_or_else(|| now.month());

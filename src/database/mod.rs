@@ -4,7 +4,7 @@ use std::{fs::OpenOptions, io::Write, ops::Range, path::PathBuf, time::Instant};
 use axum::body::Bytes;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use color_eyre::{eyre::eyre, Result};
-use rusqlite::{params, Rows};
+use rusqlite::{OptionalExtension, params, Rows};
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     oneshot,
@@ -118,9 +118,9 @@ generate_executor! {
         Ok(boards)
     }
 
-    GetBoardByName / get_board_by_name, (db, board: String) => Result<models::Board> {
+    GetBoardByName / get_board_by_name, (db, board: String) => Result<Option<models::Board>> {
         let mut stmt = db.prepare_cached(queries::SELECT_BOARD_BY_NAME)?;
-        let board = stmt.query_row([board], |r| Ok(models::Board { id: r.get(0)?, name: r.get(1)?, description: r.get(2)?, color: r.get(3)? }))?;
+        let board = stmt.query_row([board], |r| Ok(models::Board { id: r.get(0)?, name: r.get(1)?, description: r.get(2)?, color: r.get(3)? })).optional()?;
         Ok(board)
     }
 }
