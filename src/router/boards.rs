@@ -1,4 +1,5 @@
 use std::{borrow::Cow, net::Ipv4Addr, str::FromStr};
+use std::sync::OnceLock;
 
 use axum::{
     body::{Body, Bytes},
@@ -9,6 +10,7 @@ use axum::{
 };
 
 use axum_sessions::extractors::WritableSession;
+use bbscope::{BBCode, BBCodeTagConfig};
 use chrono::NaiveDate;
 use rand::{
     distributions::{Alphanumeric, DistString},
@@ -24,6 +26,16 @@ use crate::{
 };
 
 use super::{error, headers, AppState};
+
+static BBCODE: OnceLock<BBCode> = OnceLock::new();
+
+fn init_bbcode() -> BBCode {
+    let config = BBCodeTagConfig {
+        accepted_tags: vec!["b".into(), "i".into(), "sup".into(), "sub".into(), "u".into(), "s".into()],
+        ..Default::default()
+    };
+    BBCode::from_config(config, None).unwrap()
+}
 
 pub async fn handle_home(
     State(state): State<AppState>,
@@ -87,6 +99,7 @@ pub async fn handle_post(
         )
         .await;
     }
+    let content = BBCODE.get_or_init(init_bbcode).parse(&content);
 
     let ip = xforwardedfor
         .0

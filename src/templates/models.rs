@@ -22,15 +22,10 @@ pub struct Board {
     pub color: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 pub enum Flash {
     Success(Cow<'static, str>),
     Error(Cow<'static, str>),
+    #[default]
     None,
-}
-
-impl Default for Flash {
-    fn default() -> Self {
-        Self::None
-    }
 }

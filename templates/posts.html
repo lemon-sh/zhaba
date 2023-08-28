@@ -23,7 +23,7 @@
             {{ whois.asn }}, {{ whois.mnt }}<br>
         {% when None %}
     {% endmatch %}
-    {{ post.content }}
+    {{ post.content|safe }}
     {% if let Some(filename) = post.image %}
         <br><img src="/img/{{ filename }}" alt="attachment">
     {% endif %}
