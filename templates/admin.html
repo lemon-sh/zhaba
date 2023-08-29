@@ -4,5 +4,23 @@
 
 {% block content %}
 {% include "flash.html" %}
+<form action="/admin/board/create" method="post">
+    <input type="text" name="name">
+    <input type="text" name="description">
+    <input type="color" name="color">
+    <button>yeet</button>
+</form>
 
+{% for board in boards %}
+<form action="/admin/board/{{ board.id }}/update" method="post">
+    <input type="text" name="name" value="{{ board.name }}">
+    <input type="text" name="description" value="{{ board.description }}">
+    <input type="color" name="color" value="#{{ "{:06x}"|format(board.color) }}">
+    <br>
+    <button>updat</button>
+</form>
+<form action="/admin/board/{{ board.id }}/delete" method="post">
+    <button>delet</button>
+</form>
+{% endfor %}
 {% endblock %}
