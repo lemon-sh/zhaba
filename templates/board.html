@@ -6,7 +6,7 @@
 {% include "flash.html" %}
 <details>
     <summary>Add post</summary>
-    <form method="post" enctype="multipart/form-data" action="post">
+    <form method="post" enctype="multipart/form-data" action="/{{ board.name }}/post">
         <textarea name="content"></textarea><br>
         <label for="image">Attach an image (optional):</label>
         <input type="file" accept="image/*" name="image" id="image">

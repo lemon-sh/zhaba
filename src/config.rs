@@ -12,6 +12,13 @@ pub struct Config {
     pub whois_server: String,
     pub max_upload_size: usize,
     pub max_post_length: usize,
+    pub admins: Vec<Admin>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Admin {
+    pub name: String,
+    pub password: String,
 }
 
 impl Config {

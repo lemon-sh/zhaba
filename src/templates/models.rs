@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use chrono::NaiveDateTime;
+use std::borrow::Cow;
 
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +15,7 @@ pub struct Post {
     pub time: NaiveDateTime,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Board {
     pub id: i64,
     pub name: String,

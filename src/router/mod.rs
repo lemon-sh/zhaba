@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-use axum::{extract::DefaultBodyLimit, routing::{get, post}, Router, middleware};
+use axum::{
+    extract::DefaultBodyLimit,
+    middleware,
+    routing::{get, post},
+    Router,
+};
 use axum_sessions::{
     async_session::{
         base64::{self, URL_SAFE_NO_PAD},
@@ -12,11 +17,11 @@ use color_eyre::Result;
 
 use crate::{config::Config, database::ExecutorConnection};
 
+mod admin;
 mod boards;
 mod error;
 mod headers;
 mod static_files;
-mod admin;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -29,9 +34,14 @@ pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore)
 
     let admin_router = Router::new()
         .route("/admin", get(admin::handle_home))
+        .route("/admin/board/create", post(admin::handle_createboard))
+        .route("/admin/board/:b/delete", post(admin::handle_deleteboard))
+        .route("/admin/board/:b/update", post(admin::handle_updateboard))
+        .route("/admin/post/:p/delete", post(admin::handle_deletepost))
+        .route("/admin/logout", post(admin::handle_logout))
+        .route_layer(middleware::from_fn(admin::auth_middleware))
         .route("/admin/login", get(admin::handle_loginpage))
-        .route("/admin/login", post(admin::handle_login))
-        .route_layer(middleware::from_fn(admin::auth_middleware));
+        .route("/admin/login", post(admin::handle_login));
 
     let router = Router::new()
         .route("/", get(boards::handle_home))

@@ -4,7 +4,7 @@ use std::{fs::OpenOptions, io::Write, ops::Range, path::PathBuf, time::Instant};
 use axum::body::Bytes;
 use chrono::NaiveDateTime;
 use color_eyre::{eyre::eyre, Result};
-use rusqlite::{OptionalExtension, params, Rows};
+use rusqlite::{params, OptionalExtension, Rows};
 use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     oneshot,
@@ -80,7 +80,7 @@ impl fmt::Debug for InsertImage {
 }
 
 generate_executor! {
-    AddPost / post_insert, (db, board: String, content: String, ip: String, whois: Option<WhoisResult>, image: Option<InsertImage>) => Result<()> {
+    AddPost / create_post, (db, board: String, content: String, ip: String, whois: Option<WhoisResult>, image: Option<InsertImage>) => Result<()> {
         let (asn, mnt) = if let Some(whois) = whois {
             (Some(whois.asn), Some(whois.mnt))
         } else {
@@ -101,14 +101,20 @@ generate_executor! {
         Ok(())
     }
 
-    GetPosts / posts_display, (db, board: i64, range: Range<u64>) => Result<Vec<models::Post>> {
+    DeletePost / delete_post, (db, id: i64) => rusqlite::Result<()> {
+        let mut stmt = db.prepare_cached(queries::DELETE_POST)?;
+        stmt.execute([id])?;
+        Ok(())
+    }
+
+    GetPosts / get_posts, (db, board: i64, range: Range<u64>) => Result<Vec<models::Post>> {
         let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD_RANGE)?;
         let rows = stmt.query(params![board, range.start, range.end])?;
 
         posts_from_rows(rows)
     }
 
-    GetBoards / get_boards, (db,) => Result<Vec<models::Board>> {
+    GetBoards / get_boards, (db,) => rusqlite::Result<Vec<models::Board>> {
         let mut stmt = db.prepare_cached(queries::SELECT_BOARDS)?;
         let mut rows = stmt.query([])?;
         let mut boards = Vec::new();
@@ -118,10 +124,27 @@ generate_executor! {
         Ok(boards)
     }
 
-    GetBoardByName / get_board_by_name, (db, board: String) => Result<Option<models::Board>> {
+    GetBoardByName / get_board_by_name, (db, board: String) => rusqlite::Result<Option<models::Board>> {
         let mut stmt = db.prepare_cached(queries::SELECT_BOARD_BY_NAME)?;
-        let board = stmt.query_row([board], |r| Ok(models::Board { id: r.get(0)?, name: r.get(1)?, description: r.get(2)?, color: r.get(3)? })).optional()?;
-        Ok(board)
+        stmt.query_row([board], |r| Ok(models::Board { id: r.get(0)?, name: r.get(1)?, description: r.get(2)?, color: r.get(3)? })).optional()
+    }
+
+    CreateBoard / create_board, (db, name: String, description: String, color: u32) => rusqlite::Result<()> {
+        let mut stmt = db.prepare_cached(queries::INSERT_BOARD)?;
+        stmt.execute(params![name, description, color])?;
+        Ok(())
+    }
+
+    DeleteBoard / delete_board, (db, id: i64) => rusqlite::Result<()> {
+        let mut stmt = db.prepare_cached(queries::DELETE_BOARD)?;
+        stmt.execute([id])?;
+        Ok(())
+    }
+
+    UpdateBoard / update_board, (db, board: models::Board) => rusqlite::Result<()> {
+        let mut stmt = db.prepare_cached(queries::UPDATE_BOARD)?;
+        stmt.execute(params![board.name, board.description, board.color, board.id])?;
+        Ok(())
     }
 }
 

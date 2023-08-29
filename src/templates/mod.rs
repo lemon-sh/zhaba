@@ -1,6 +1,6 @@
 use askama::Template;
+use chrono::{Datelike, Utc};
 use models::{Board, Flash};
-use chrono::{Utc, Datelike};
 
 pub mod models;
 
@@ -14,11 +14,24 @@ pub struct Index {
 }
 
 #[derive(Template)]
-#[template(path = "posts.html")]
+#[template(path = "board.html")]
 pub struct Posts {
     pub flash: Flash,
     pub board: Board,
     pub year: i32,
     pub month: u32,
     pub posts: Vec<models::Post>,
+}
+
+#[derive(Template, Default)]
+#[template(path = "login.html")]
+pub struct Login {
+    pub flash: Flash,
+}
+
+#[derive(Template)]
+#[template(path = "admin.html")]
+pub struct AdminHome {
+    pub flash: Flash,
+    pub boards: Vec<Board>,
 }

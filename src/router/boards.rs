@@ -63,12 +63,25 @@ pub async fn handle_post(
         return Err(error::http_400())
     };
     if content.is_empty() {
-        session.insert("flash", Flash::Error("Post content cannot be empty".into())).unwrap();
-        return Ok(Redirect::to(&redirect_uri))
+        session
+            .insert("flash", Flash::Error("Post content cannot be empty".into()))
+            .unwrap();
+        return Ok(Redirect::to(&redirect_uri));
     }
     if content.len() > state.cfg.max_post_length {
-        session.insert("flash", Flash::Error(format!("Post content too long (max {} chars)", state.cfg.max_post_length).into())).unwrap();
-        return Ok(Redirect::to(&redirect_uri))
+        session
+            .insert(
+                "flash",
+                Flash::Error(
+                    format!(
+                        "Post content too long (max {} chars)",
+                        state.cfg.max_post_length
+                    )
+                    .into(),
+                ),
+            )
+            .unwrap();
+        return Ok(Redirect::to(&redirect_uri));
     }
     let content = BBCODE.get_or_init(init_bbcode).parse(&content);
 
@@ -94,8 +107,13 @@ pub async fn handle_post(
                 filename,
             })
         } else {
-            session.insert("flash", Flash::Error("Image format not supported or invalid image".into())).unwrap();
-            return Ok(Redirect::to(&redirect_uri))
+            session
+                .insert(
+                    "flash",
+                    Flash::Error("Image format not supported or invalid image".into()),
+                )
+                .unwrap();
+            return Ok(Redirect::to(&redirect_uri));
         }
     } else {
         None
@@ -103,7 +121,7 @@ pub async fn handle_post(
 
     state
         .db
-        .post_insert(board_name, content, ip, whois, image)
+        .create_post(board_name, content, ip, whois, image)
         .await
         .map_err(error::err_into_500)?;
 
@@ -157,7 +175,7 @@ pub async fn handle_view(
 
     let posts = state
         .db
-        .posts_display(board.id, start_ts..end_ts)
+        .get_posts(board.id, start_ts..end_ts)
         .await
         .map_err(error::err_into_500)?;
 
