@@ -12,7 +12,10 @@ pub struct WhoisResult {
 
 pub async fn whois(server: &str, query: &str) -> Result<Option<WhoisResult>> {
     if server == "!" {
-        return Ok(Some(WhoisResult { asn: 4242426969, mnt: "MIETEK-MNT".into() }))
+        return Ok(Some(WhoisResult {
+            asn: 4242426969,
+            mnt: "MIETEK-MNT".into(),
+        }));
     }
     let mut stream = TcpStream::connect(server).await?;
     let (read, mut write) = stream.split();

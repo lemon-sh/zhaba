@@ -1,10 +1,9 @@
 use std::{net::IpAddr, str::FromStr};
 
 use axum::{
-    headers::{Error, Header},
+    headers::{Error, Header, HeaderValue},
     http::HeaderName,
 };
-use axum::headers::HeaderValue;
 
 static X_FORWARDED_FOR: HeaderName = HeaderName::from_static("x-forwarded-for");
 static REFERER: HeaderName = HeaderName::from_static("referer");
@@ -47,8 +46,16 @@ impl Header for Referer {
         &REFERER
     }
 
-    fn decode<'i, I>(values: &mut I) -> Result<Self, Error> where Self: Sized, I: Iterator<Item=&'i HeaderValue> {
-        let uri = values.next().unwrap().to_str().map_err(|_| Error::invalid())?;
+    fn decode<'i, I>(values: &mut I) -> Result<Self, Error>
+    where
+        Self: Sized,
+        I: Iterator<Item = &'i HeaderValue>,
+    {
+        let uri = values
+            .next()
+            .unwrap()
+            .to_str()
+            .map_err(|_| Error::invalid())?;
         Ok(Self(uri.to_string()))
     }
 

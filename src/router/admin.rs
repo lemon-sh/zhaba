@@ -1,14 +1,19 @@
 use crate::{
-    router::{error, AppState},
+    router::{error, headers, AppState},
     templates,
-    templates::models::Flash,
+    templates::models::{Board, Flash},
 };
-use axum::{body::Body, extract::{Path, State}, http::{Request, Response}, middleware::Next, response::{IntoResponse, Redirect}, Form, TypedHeader};
+use axum::{
+    body::Body,
+    extract::{Path, State},
+    http::{Request, Response},
+    middleware::Next,
+    response::{IntoResponse, Redirect},
+    Form, TypedHeader,
+};
 use axum_sessions::extractors::{ReadableSession, WritableSession};
 use rusqlite::ErrorCode;
 use serde::Deserialize;
-use crate::router::headers;
-use crate::templates::models::Board;
 
 pub async fn handle_home(
     State(state): State<AppState>,
@@ -75,7 +80,11 @@ pub async fn handle_createboard(
 ) -> impl IntoResponse {
     match state
         .db
-        .create_board(create_form.name, create_form.description, parse_html_color(&create_form.color)?)
+        .create_board(
+            create_form.name,
+            create_form.description,
+            parse_html_color(&create_form.color)?,
+        )
         .await
     {
         Ok(_) => session
@@ -96,8 +105,14 @@ pub async fn handle_deleteboard(
     mut session: WritableSession,
     Path(board_id): Path<i64>,
 ) -> Result<impl IntoResponse, Response<Body>> {
-    state.db.delete_board(board_id).await.map_err(error::err_into_500)?;
-    session.insert("flash", Flash::Success("Board successfully deleted".into())).unwrap();
+    state
+        .db
+        .delete_board(board_id)
+        .await
+        .map_err(error::err_into_500)?;
+    session
+        .insert("flash", Flash::Success("Board successfully deleted".into()))
+        .unwrap();
     Ok(Redirect::to("/admin"))
 }
 
@@ -107,13 +122,19 @@ pub async fn handle_updateboard(
     Path(board_id): Path<i64>,
     Form(update_form): Form<UpdateBoardForm>,
 ) -> Result<impl IntoResponse, Response<Body>> {
-    state.db.update_board(Board {
-        id: board_id,
-        name: update_form.name,
-        description: update_form.description,
-        color: parse_html_color(&update_form.color)?,
-    }).await.map_err(error::err_into_500)?;
-    session.insert("flash", Flash::Success("Board successfully deleted".into())).unwrap();
+    state
+        .db
+        .update_board(Board {
+            id: board_id,
+            name: update_form.name,
+            description: update_form.description,
+            color: parse_html_color(&update_form.color)?,
+        })
+        .await
+        .map_err(error::err_into_500)?;
+    session
+        .insert("flash", Flash::Success("Board successfully deleted".into()))
+        .unwrap();
     Ok(Redirect::to("/admin"))
 }
 
@@ -123,8 +144,14 @@ pub async fn handle_deletepost(
     TypedHeader(headers::Referer(referer)): TypedHeader<headers::Referer>,
     Path(post_id): Path<i64>,
 ) -> Result<impl IntoResponse, Response<Body>> {
-    state.db.delete_post(post_id).await.map_err(error::err_into_500)?;
-    session.insert("flash", Flash::Success("Post successfully deleted".into())).unwrap();
+    state
+        .db
+        .delete_post(post_id)
+        .await
+        .map_err(error::err_into_500)?;
+    session
+        .insert("flash", Flash::Success("Post successfully deleted".into()))
+        .unwrap();
 
     Ok(Redirect::to(&referer))
 }
