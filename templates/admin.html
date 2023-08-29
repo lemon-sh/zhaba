@@ -3,6 +3,10 @@
 {% block title %}Admin page{% endblock %}
 
 {% block content %}
+<form action="/admin/logout" method="post">
+    <button>ight im headin out</button>
+</form>
+
 {% include "flash.html" %}
 <form action="/admin/board/create" method="post">
     <input type="text" name="name">
