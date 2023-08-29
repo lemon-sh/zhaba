@@ -2,7 +2,7 @@ use core::fmt;
 use std::{fs::OpenOptions, io::Write, ops::Range, path::PathBuf, time::Instant};
 
 use axum::body::Bytes;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 use color_eyre::{eyre::eyre, Result};
 use rusqlite::{OptionalExtension, params, Rows};
 use tokio::sync::{
@@ -101,7 +101,7 @@ generate_executor! {
         Ok(())
     }
 
-    GetPostsInRange / posts_display_range, (db, board: i64, range: Range<u64>) => Result<Vec<models::Post>> {
+    GetPosts / posts_display, (db, board: i64, range: Range<u64>) => Result<Vec<models::Post>> {
         let mut stmt = db.prepare_cached(queries::SELECT_POSTS_BOARD_RANGE)?;
         let rows = stmt.query(params![board, range.start, range.end])?;
 

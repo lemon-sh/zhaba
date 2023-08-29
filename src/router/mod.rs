@@ -1,10 +1,6 @@
 use std::sync::Arc;
 
-use axum::{
-    extract::DefaultBodyLimit,
-    routing::{get, post},
-    Router,
-};
+use axum::{extract::DefaultBodyLimit, routing::{get, post}, Router, middleware};
 use axum_sessions::{
     async_session::{
         base64::{self, URL_SAFE_NO_PAD},
@@ -20,6 +16,7 @@ mod boards;
 mod error;
 mod headers;
 mod static_files;
+mod admin;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -29,13 +26,21 @@ pub struct AppState {
 
 pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore) -> Result<Router> {
     let secret = base64::decode_config(&cfg.cookie_secret, URL_SAFE_NO_PAD)?;
+
+    let admin_router = Router::new()
+        .route("/admin", get(admin::handle_home))
+        .route("/admin/login", get(admin::handle_loginpage))
+        .route("/admin/login", post(admin::handle_login))
+        .route_layer(middleware::from_fn(admin::auth_middleware));
+
     let router = Router::new()
         .route("/", get(boards::handle_home))
         .route("/:b", get(boards::handle_view))
-        .route("/:b", post(boards::handle_post))
+        .route("/:b/post", post(boards::handle_post))
         .route("/static/*file", get(static_files::static_handler))
         .route("/img/*file", get(static_files::image_handler))
         .fallback_service(get(|| async { error::http_404() }))
+        .merge(admin_router)
         .layer(SessionLayer::new(store, &secret))
         .layer(DefaultBodyLimit::max(cfg.max_upload_size))
         .with_state(AppState { db, cfg });

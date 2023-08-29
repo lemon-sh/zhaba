@@ -6,7 +6,7 @@
 {% include "flash.html" %}
 <details>
     <summary>Add post</summary>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" action="post">
         <textarea name="content"></textarea><br>
         <label for="image">Attach an image (optional):</label>
         <input type="file" accept="image/*" name="image" id="image">

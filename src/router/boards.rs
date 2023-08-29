@@ -157,7 +157,7 @@ pub async fn handle_view(
 
     let posts = state
         .db
-        .posts_display_range(board.id, start_ts..end_ts)
+        .posts_display(board.id, start_ts..end_ts)
         .await
         .map_err(error::err_into_500)?;
 

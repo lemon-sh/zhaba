@@ -5,3 +5,4 @@ pub static SELECT_POSTS_BOARD_RANGE: &str = "select id,content,image,ip,asn,mnt,
 pub static INSERT_BOARD: &str = "insert into boards(name,description,color) values(?,?,?)";
 pub static SELECT_BOARDS: &str = "select * from boards";
 pub static SELECT_BOARD_BY_NAME: &str = "select * from boards where name = ?";
+pub static UPDATE_BOARD: &str = "update boards set name = ?, description = ?, color = ? where id = ?";
