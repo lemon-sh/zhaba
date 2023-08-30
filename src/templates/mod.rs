@@ -15,8 +15,9 @@ pub struct Index {
 
 #[derive(Template)]
 #[template(path = "board.html")]
-pub struct Posts {
+pub struct BoardView {
     pub flash: Flash,
+    pub admin: Option<String>,
     pub board: Board,
     pub year: i32,
     pub month: u32,

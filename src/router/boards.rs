@@ -179,9 +179,10 @@ pub async fn handle_view(
         .await
         .map_err(error::err_into_500)?;
 
-    Ok(templates::Posts {
+    Ok(templates::BoardView {
         board,
         year,
+        admin: session.get_raw("admin"),
         flash,
         posts,
         month,

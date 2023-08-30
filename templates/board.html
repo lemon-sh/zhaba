@@ -44,6 +44,11 @@
     {% if let Some(filename) = post.image %}
         <br><img src="/img/{{ filename }}" alt="attachment">
     {% endif %}
+    {% if admin.is_some() %}
+    <form action="/admin/post/{{ post.id }}/delete" method="post">
+        <button>deplatform</button>
+    </form>
+    {% endif %}
     <br><br>
 </li>
 {% endfor %}
