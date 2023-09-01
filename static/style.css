@@ -88,7 +88,7 @@ nav > a.navitem {
     color: var(--primary);
 }
 
-.navitem:hover, button:hover, input[type="color"]:hover {
+.navitem:hover, button:hover, input[type="color"]:hover, select:hover {
     background-color: var(--primary);
     color: var(--bg);
 }
@@ -170,8 +170,31 @@ input, textarea, button, select {
     font-size: 0.9rem;
 }
 
+button, select, input[type="file"]::file-selector-button {
+    cursor: pointer;
+}
+
 input::placeholder, textarea::placeholder {
     color: var(--light-structural);
+}
+
+input[type="file"] {
+    background: var(--structural);
+    padding: 0.25em;
+}
+
+input[type="file"]::file-selector-button {
+    color: var(--primary);
+    background-color: var(--dark-structural);
+    border: 1px dashed var(--light-structural);
+    font: var(--monospace-font);
+    border-radius: 0.5em;
+    padding: 0.5em;
+}
+
+input[type="file"]::file-selector-button:hover {
+    color: var(--bg);
+    background-color: var(--primary);
 }
 
 footer > p {
@@ -232,6 +255,7 @@ textarea {
     height: 100%;
     top: 0;
     justify-content: center;
+    padding-left: 5%;
 }
 
 .error-code {
