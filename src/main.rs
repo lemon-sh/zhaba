@@ -1,4 +1,5 @@
 use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
+use axum::ServiceExt;
 
 use axum_sessions::async_session::{
     self,
@@ -12,7 +13,9 @@ use color_eyre::{
 use config::Config;
 use rand::{thread_rng, RngCore};
 use tokio::{select, sync::broadcast, time::sleep};
+use tower_http::normalize_path::NormalizePathLayer;
 use tracing::Level;
+use tower_layer::Layer;
 
 use crate::database::DbExecutor;
 
@@ -81,15 +84,16 @@ async fn main() -> Result<()> {
     let (db_exec, db_conn) = DbExecutor::create(cfg.db.as_deref().unwrap_or("zhaba.db3"))?;
     let exec_thread = thread::spawn(move || db_exec.run());
 
-    let session_store = async_session::MemoryStore::new();
+    let session_store = MemoryStore::new();
     let (ctx, _) = broadcast::channel(1);
     let maintenance_task = tokio::spawn(maintenance(ctx.subscribe(), session_store.clone(), 3600));
 
     let router = router::build(db_conn, cfg.clone(), session_store).await?;
+    let normalized_router = NormalizePathLayer::trim_trailing_slash().layer(router);
 
     tracing::info!("Listening on {}", cfg.listen);
     if let Err(e) = axum::Server::bind(&cfg.listen)
-        .serve(router.into_make_service())
+        .serve(normalized_router.into_make_service())
         .with_graceful_shutdown(terminate_signal())
         .await
     {
