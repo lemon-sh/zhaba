@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}zhaba{% endblock %}
+{% block description %}Proudly brought to you by AS4242421411{% endblock %}
+{% block boards_navitem %}current-navitem{% endblock %}
 
 {% block content %}
-<ul>
+<ul class="board-index">
 {% for board in boards %}
 <li>
     <a href="{{ board.name }}">
-        <span style="color: #{{ "{:06x}"|format(board.color) }}">/{{ board.name }}/</span> - {{ board.description }}
+        <span class="board-name" style="color: #{{ "{:06x}"|format(board.color) }}">/{{ board.name }}/&ensp;</span>{{ board.description }}
     </a>
 </li>
 {% endfor %}

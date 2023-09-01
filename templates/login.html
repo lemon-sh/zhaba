@@ -4,11 +4,9 @@
 
 {% block content %}
 {% include "flash.html" %}
-<form method="post">
-    <label for="username">Username</label>
-    <input type="text" id="username" name="user">
-    <label for="password">Password</label>
-    <input type="password" id="password" name="pass">
+<form class="admin-login" method="post">
+    <input type="text" id="username" name="user" placeholder="username">
+    <input type="password" id="password" name="pass" placeholder="password">
     <button>lemme in</button>
 </form>
 {% endblock %}

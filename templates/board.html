@@ -1,35 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}{{ board.name }}{% endblock %}
+{% block title %}/{{ board.name }}/{% endblock %}
+{% block description %}{{ board.description }}{% endblock %}
 
 {% block content %}
 {% include "flash.html" %}
 <details>
     <summary>Add post</summary>
-    <form method="post" enctype="multipart/form-data" action="/{{ board.name }}/post">
-        <textarea name="content"></textarea><br>
+    <form class="post-form" method="post" enctype="multipart/form-data" action="/{{ board.name }}/post">
+        <textarea name="content" placeholder="post content..."></textarea><br>
         <label for="image">Attach an image (optional):</label>
         <input type="file" accept="image/*" name="image" id="image">
         <br>
-        <button>click to shitpost</button>
+        <button>Post</button>
     </form>
 </details>
-
-<form>
-    <label for="year">Year</label>
+<hr>
+<form class="date-picker">
+    <span>Date:</span>
     <select name="y" id="year">
         {% let current_year = Utc::now().year() %}
         {% for i in STARTING_YEAR..=current_year %}
             <option value="{{ i }}" {% if i == year %}selected{% endif %}>{{ i }}</option>
         {% endfor %}
     </select>
-    <label for="month">Month</label>
     <select name="m" id="month">
         {% for i in 1..12 %}
             <option value="{{ i }}" {% if i == month %}selected{% endif %}>{{ i }}</option>
         {% endfor %}
     </select>
-    <button>lessgo</button>
+    <button>go</button>
 </form>
 
 {% for post in posts %}

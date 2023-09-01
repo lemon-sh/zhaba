@@ -7,19 +7,46 @@
     --secondary: #e5ffb5;
     --tertiary: #efe;
 
-    --font: "Victor Mono", monospace
+    --font: "DINish", sans-serif;
+    --monospace-font: "Victor Mono", monospace;
+}
+
+@font-face {
+    font-family: 'DINish';
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/static/dinish-regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'DINish';
+    font-style: italic;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/static/dinish-italic.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'DINish';
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url('/static/dinish-bold.woff2') format('woff2');
 }
 
 @font-face {
     font-family: "Victor Mono";
     font-style: normal;
-    src: url('/static/VictorMono-Medium.ttf');
+    font-display: swap;
+    src: url('/static/VictorMono-Medium.ttf') format('woff2');
 }
 
 @font-face {
     font-family: "Victor Mono";
     font-style: italic;
-    src: url('/static/VictorMono-MediumItalic.ttf');
+    font-display: swap;
+    src: url('/static/VictorMono-MediumItalic.ttf') format('woff2');
 }
 
 body {
@@ -29,6 +56,74 @@ body {
     margin: 0 auto;
     max-width: 60em;
     padding: 1em;
+    font-size: 1.1em;
+}
+
+nav {
+    margin: 1em 0;
+}
+
+.navitem:first-child {
+    border-radius: 1em 0 0 1em;
+    padding: 0.1em 0.5em 0.1em 0.8em;
+}
+
+.navitem:last-child {
+    border-radius: 0 1em 1em 0;
+    padding: 0.1em 0.8em 0.1em 0.5em;
+}
+
+.navitem {
+    background-color: var(--dark-structural);
+    padding: 0.1em 0.5em;
+    margin-left: 1px;
+    text-decoration: none;
+}
+
+nav > a.navitem {
+    color: var(--primary);
+}
+
+.navitem:hover, button:hover, input[type="color"]:hover {
+    background-color: var(--primary);
+    color: var(--bg);
+}
+
+.current-navitem {
+    background-color: var(--light-structural);
+    cursor: default;
+}
+
+header {
+    text-align: center
+}
+
+header > h1 {
+    margin: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--tertiary);
+}
+
+hr {
+    height: 0;
+    border: 1px dashed var(--structural);
+}
+
+footer > hr {
+    margin: 0;
+}
+
+a:any-link {
+    color: var(--secondary);
+    text-decoration-style: dashed;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+a:hover {
+    color: var(--tertiary);
 }
 
 .asn {
@@ -36,5 +131,111 @@ body {
 }
 
 .mnt {
-    color: #ff2465;
+    color: #ff4980;
+}
+
+@media (min-width: 70em) {
+    .left-pet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+    }
+}
+
+.admin-login {
+    display: flex;
+    gap: 1em;
+    flex-direction: column;
+    max-width: 15em;
+    margin: 5em auto;
+}
+
+.admin-login > button {
+    margin: 1em auto 0;
+    width: fit-content;
+    padding: 0.75em 2em;
+}
+
+input, textarea, button, select {
+    background-color: var(--dark-structural);
+    padding: 0.75em;
+    border-radius: 0.5em;
+    border: none;
+    color: var(--primary);
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--light-structural);
+}
+
+footer > p {
+    margin: 0;
+    padding: 0.5em;
+    text-align: right;
+    color: var(--light-structural);
+}
+
+.board-name {
+    display: inline-block;
+}
+
+.date-picker {
+    margin: 1em 0 1em auto;
+    display: flex;
+    align-items: center;
+    max-width: 15em;
+    gap: 0.5em;
+}
+
+.date-picker > button {
+    flex: 1;
+}
+
+summary {
+    cursor: pointer;
+}
+
+details {
+    padding: 1em;
+}
+
+.post-form > textarea {
+    margin-top: 1em;
+    width: 100%;
+}
+
+.post-form > input {
+    margin: 1em 0;
+}
+
+.post-form > button {
+    display: block;
+    margin: 0 0 0 auto;
+}
+
+textarea {
+    box-sizing: border-box;
+    font: var(--monospace-font);
+}
+
+.http-error {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    gap: 1em;
+    height: 100%;
+    top: 0;
+    justify-content: center;
+}
+
+.error-code {
+    font-size: 8rem;
+    font-weight: bold;
+    line-height: 2rem;
+    margin-bottom: 2rem;
+}
+
+.error-name {
+    font-size: 4rem;
+    font-weight: normal;
 }
