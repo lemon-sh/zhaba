@@ -171,6 +171,6 @@ pub async fn auth_middleware<B>(
 }
 
 fn parse_html_color(color: &str) -> Result<u32, Response<Body>> {
-    let color_hex = color.get(1..).ok_or_else(|| error::http_400())?;
+    let color_hex = color.get(1..=6).ok_or_else(|| error::http_400())?;
     u32::from_str_radix(color_hex, 16).map_err(|_| error::http_400())
 }
