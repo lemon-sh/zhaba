@@ -2,7 +2,6 @@ use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
 use axum::ServiceExt;
 
 use axum_sessions::async_session::{
-    self,
     base64::{display::Base64Display, URL_SAFE_NO_PAD},
     MemoryStore,
 };
@@ -91,7 +90,7 @@ async fn main() -> Result<()> {
     let router = router::build(db_conn, cfg.clone(), session_store).await?;
     let normalized_router = NormalizePathLayer::trim_trailing_slash().layer(router);
 
-    tracing::info!("Listening on {}", cfg.listen);
+    tracing::info!("Listening on http://{}", cfg.listen);
     if let Err(e) = axum::Server::bind(&cfg.listen)
         .serve(normalized_router.into_make_service())
         .with_graceful_shutdown(terminate_signal())
