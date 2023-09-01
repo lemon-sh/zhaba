@@ -215,7 +215,7 @@ details {
 
 textarea {
     box-sizing: border-box;
-    font: var(--monospace-font);
+    font-family: var(--monospace-font);
 }
 
 .http-error {
