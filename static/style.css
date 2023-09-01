@@ -8,7 +8,7 @@
     --tertiary: #efe;
 
     --font: "DINish", sans-serif;
-    --monospace-font: "Victor Mono", monospace;
+    --monospace-font: "Fragment Mono", monospace;
 }
 
 @font-face {
@@ -36,17 +36,21 @@
 }
 
 @font-face {
-    font-family: "Victor Mono";
+    font-family: "Fragment Mono";
     font-style: normal;
     font-display: swap;
-    src: url('/static/VictorMono-Medium.ttf') format('woff2');
+    src: url('/static/FragmentMono-Regular.ttf') format('woff2');
 }
 
 @font-face {
-    font-family: "Victor Mono";
+    font-family: "Fragment Mono";
     font-style: italic;
     font-display: swap;
-    src: url('/static/VictorMono-MediumItalic.ttf') format('woff2');
+    src: url('/static/FragmentMono-Italic.ttf') format('woff2');
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
@@ -162,6 +166,8 @@ input, textarea, button, select {
     border-radius: 0.5em;
     border: none;
     color: var(--primary);
+    font-family: var(--monospace-font);
+    font-size: 0.9rem;
 }
 
 input::placeholder, textarea::placeholder {
@@ -215,7 +221,7 @@ details {
 
 textarea {
     box-sizing: border-box;
-    font-family: var(--monospace-font);
+    font-size: 0.8em;
 }
 
 .http-error {
@@ -238,4 +244,9 @@ textarea {
 .error-name {
     font-size: 4rem;
     font-weight: normal;
+}
+
+.flash {
+    display: block;
+    margin-top: 1em;
 }
