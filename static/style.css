@@ -130,14 +130,6 @@ a:hover {
     color: var(--tertiary);
 }
 
-.asn {
-    color: #8eff32;
-}
-
-.mnt {
-    color: #ff4980;
-}
-
 @media (min-width: 70em) {
     .left-pet {
         position: fixed;
@@ -308,7 +300,7 @@ textarea {
     text-align: right;
 }
 
-button[form="delete-form"]:hover {
+.delete-button:hover {
     background-color: #ff4980;
 }
 
@@ -325,4 +317,60 @@ button[form="delete-form"]:hover {
 
 .name-and-color input[type="text"] {
     flex: 1;
+}
+
+.post {
+    margin-bottom: 1em;
+}
+
+.post img {
+    max-height: 12rem;
+}
+
+.post-header {
+    font-family: var(--monospace-font);
+    letter-spacing: -1px;
+    background-color: var(--structural);
+    padding: 1em;
+    border-radius: 0.5em 0.5em 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.post-header > form {
+    margin-left: auto;
+}
+
+.post-header > form > button {
+    height: 2rem;
+    width: 2rem;
+    padding: 0;
+    font-size: 1rem;
+}
+
+.post-content {
+    padding: 1em;
+    background-color: var(--dark-structural);
+    border-radius: 0 0 0.5em 0.5em;
+}
+
+.post-asn {
+    color: #caff6e;
+}
+
+.post-mnt {
+    color: #ff4980;
+}
+
+.post-time {
+    color: #7ed2ff;
+}
+
+.post-ip {
+    color: #a98dff
+}
+
+.post-id {
+    color: #fff274;
 }

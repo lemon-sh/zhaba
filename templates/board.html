@@ -33,24 +33,31 @@
 </form>
 
 {% for post in posts %}
-<li>
-    {{ post.id }}, {{ post.time }}, {{ post.ip }}:<br>
-    {% match post.whois %}
+<div class="post">
+    <div class="post-header">
+        <span class="post-id">#{{ post.id }}&ensp;</span>
+        <span class="post-time">{{ post.time }}&ensp;</span>
+        <span class="post-ip">{{ post.ip }}&ensp;</span>
+        {% match post.whois %}
         {% when Some with (whois) %}
-            {{ whois.asn }}, {{ whois.mnt }}<br>
+        <span class="post-mnt">{{ whois.mnt }}&ensp;</span>
+        <span class="post-asn">AS{{ whois.asn }}</span>
         {% when None %}
-    {% endmatch %}
-    {{ post.content|safe }}
-    {% if let Some(filename) = post.image %}
-        <br><img src="/img/{{ filename }}" alt="attachment">
-    {% endif %}
-    {% if admin.is_some() %}
-    <form action="/admin/post/{{ post.id }}/delete" method="post">
-        <button>deplatform</button>
-    </form>
-    {% endif %}
-    <br><br>
-</li>
+        {% endmatch %}
+        {% if admin.is_some() %}
+        <form action="/admin/post/{{ post.id }}/delete" method="post">
+            <button class="delete-button">×</button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="post-content">
+        {% if let Some(filename) = post.image %}
+        <a href="/img/{{ filename }}" target="_blank"><img src="/img/{{ filename }}" alt="attachment"></a>
+        {% endif %}
+        {{ post.content|safe }}
+
+    </div>
+</div>
 {% endfor %}
 
 {% endblock %}
