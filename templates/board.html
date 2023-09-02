@@ -36,15 +36,15 @@
 {% for post in posts %}
 <div class="post">
     <div class="post-header">
-        <span class="post-id">#{{ post.id }}&ensp;</span>
-        <span class="post-time">{{ post.time }}&ensp;</span>
-        <span class="post-ip">{{ post.ip }}&ensp;</span>
+        <span class="post-id">#{{ post.id }}&emsp;</span>
+        <span class="post-ip">{{ post.ip }}</span>
         {% match post.whois %}
         {% when Some with (whois) %}
-        <span class="post-mnt">{{ whois.mnt }}&ensp;</span>
+        <span class="post-mnt">{{ whois.mnt }}</span>
         <span class="post-asn">AS{{ whois.asn }}</span>
         {% when None %}
         {% endmatch %}
+        <span class="post-time">{{ post.time }}</span>
         {% if admin.is_some() %}
         <form action="/admin/post/{{ post.id }}/delete" method="post">
             <button class="delete-button">×</button>

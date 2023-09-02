@@ -1,5 +1,5 @@
-use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
 use axum::ServiceExt;
+use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
 
 use axum_sessions::async_session::{
     base64::{display::Base64Display, URL_SAFE_NO_PAD},
@@ -13,8 +13,8 @@ use config::Config;
 use rand::{thread_rng, RngCore};
 use tokio::{select, sync::broadcast, time::sleep};
 use tower_http::normalize_path::NormalizePathLayer;
-use tracing::Level;
 use tower_layer::Layer;
+use tracing::Level;
 
 use crate::database::DbExecutor;
 

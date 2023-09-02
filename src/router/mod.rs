@@ -54,5 +54,6 @@ pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore)
         .layer(SessionLayer::new(store, &secret))
         .layer(DefaultBodyLimit::max(cfg.max_upload_size))
         .with_state(AppState { db, cfg });
+
     Ok(router)
 }
