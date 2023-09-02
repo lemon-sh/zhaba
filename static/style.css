@@ -167,6 +167,7 @@ input, textarea, button, select {
     border: none;
     color: var(--primary);
     font-family: var(--monospace-font);
+    letter-spacing: -1px;
     font-size: 0.9rem;
 }
 
@@ -187,7 +188,8 @@ input[type="file"]::file-selector-button {
     color: var(--primary);
     background-color: var(--dark-structural);
     border: 1px dashed var(--light-structural);
-    font: var(--monospace-font);
+    font-family: var(--monospace-font);
+    letter-spacing: -1px;
     border-radius: 0.5em;
     padding: 0.5em;
 }
@@ -245,6 +247,7 @@ details {
 textarea {
     box-sizing: border-box;
     font-size: 0.8em;
+    resize: vertical;
 }
 
 .http-error {
@@ -273,4 +276,53 @@ textarea {
 .flash {
     display: block;
     margin-top: 1em;
+}
+
+.logout {
+    text-align: right;
+}
+
+.edit-board {
+    background-color: var(--dark-structural);
+    border-radius: 0.5em;
+    margin: 1em auto;
+    max-width: 50em;
+    padding: 1em;
+}
+
+.edit-board > form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.edit-board button, .edit-board input, .edit-board textarea {
+    background-color: var(--bg);
+}
+
+.edit-board button:hover, .edit-board input[type="color"]:hover {
+    background-color: var(--primary);
+}
+
+.form-buttons {
+    text-align: right;
+}
+
+button[form="delete-form"]:hover {
+    background-color: #ff4980;
+}
+
+.name-and-color {
+    display: flex;
+    gap: 0.5em;
+    height: 2.5em;
+}
+
+.name-and-color > * {
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.name-and-color input[type="text"] {
+    flex: 1;
 }

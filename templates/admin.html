@@ -3,28 +3,39 @@
 {% block title %}Admin page{% endblock %}
 
 {% block content %}
-<form action="/admin/logout" method="post">
-    <button>ight im headin out</button>
-</form>
-
 {% include "flash.html" %}
-<form action="/admin/board/create" method="post">
-    <input type="text" name="name">
-    <input type="text" name="description">
-    <input type="color" name="color">
-    <button>yeet</button>
+<form class="logout" action="/admin/logout" method="post">
+    <button>logout</button>
 </form>
-
+<h1>Boards</h1>
+<div class="edit-board">
+    <form class="create-board" action="/admin/board/create" method="post">
+        <div class="name-and-color">
+            <input type="text" name="name" placeholder="name...">
+            <input type="color" name="color">
+        </div>
+        <textarea name="description" placeholder="description..."></textarea>
+        <div class="form-buttons">
+            <button>Add</button>
+        </div>
+    </form>
+</div>
+<br>
 {% for board in boards %}
-<form action="/admin/board/{{ board.id }}/update" method="post">
-    <input type="text" name="name" value="{{ board.name }}">
-    <input type="text" name="description" value="{{ board.description }}">
-    <input type="color" name="color" value="#{{ "{:06x}"|format(board.color) }}">
-    <br>
-    <button>updat</button>
-</form>
-<form action="/admin/board/{{ board.id }}/delete" method="post">
-    <button>delet</button>
-</form>
+<div class="edit-board">
+    <form action="/admin/board/{{ board.id }}/update" method="post" id="edit-form">
+        <div class="name-and-color">
+            <input type="text" name="name" value="{{ board.name }}" placeholder="name...">
+            <input type="color" name="color" value="#{{ "{:06x}"|format(board.color) }}">
+        </div>
+        <textarea name="description" placeholder="description...">{{ board.description }}</textarea>
+        <br>
+    </form>
+    <form action="/admin/board/{{ board.id }}/delete" method="post" id="delete-form"></form>
+    <div class="form-buttons">
+        <button form="edit-form">Save</button>
+        <button form="delete-form">Delete</button>
+    </div>
+</div>
 {% endfor %}
 {% endblock %}

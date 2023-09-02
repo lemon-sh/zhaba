@@ -3,8 +3,8 @@
 {% block title %}Admin login{% endblock %}
 
 {% block content %}
-{% include "flash.html" %}
 <form class="admin-login" method="post">
+    {% include "flash.html" %}
     <input type="text" id="username" name="user" placeholder="username">
     <input type="password" id="password" name="pass" placeholder="password">
     <button>lemme in</button>
