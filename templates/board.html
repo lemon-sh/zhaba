@@ -52,11 +52,15 @@
         {% endif %}
     </div>
     <div class="post-content">
-        {% if let Some(filename) = post.image %}
-        <a href="/img/{{ filename }}" target="_blank"><img src="/img/{{ filename }}" alt="attachment"></a>
-        {% endif %}
         {{ post.content|safe }}
-
+        {% if let Some(filename) = post.image %}
+        <hr>
+        <div class="img-container">
+            <a href="/img/{{ filename }}" target="_blank">
+                <img src="/img/{{ filename }}" alt="attachment">
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endfor %}

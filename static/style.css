@@ -374,3 +374,8 @@ textarea {
 .post-id {
     color: #fff274;
 }
+
+.img-container {
+    overflow-x: scroll;
+}
+
