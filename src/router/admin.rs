@@ -133,7 +133,7 @@ pub async fn handle_updateboard(
         .await
         .map_err(error::err_into_500)?;
     session
-        .insert("flash", Flash::Success("Board successfully deleted".into()))
+        .insert("flash", Flash::Success("Board successfully updated".into()))
         .unwrap();
     Ok(Redirect::to("/admin"))
 }
@@ -146,7 +146,7 @@ pub async fn handle_deletepost(
 ) -> Result<impl IntoResponse, Response<Body>> {
     state
         .db
-        .delete_post(post_id)
+        .delete_post(post_id, state.cfg.image_path.clone())
         .await
         .map_err(error::err_into_500)?;
     session

@@ -9,7 +9,7 @@
 </head>
 <body>
     <header>
-        <h1>{% block title %}{% endblock %}</h1>
+        <h1 {% block title_css %}{%- endblock -%}>{% block title %}{% endblock %}</h1>
         <small>{% block description %}{% endblock %}</small>
         <nav>
             <a class="navitem {% block boards_navitem %}{%- endblock -%}" href="/">boards</a><a class="navitem {%- block about_navitem -%}{%- endblock -%}" href="/about">about</a>

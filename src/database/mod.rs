@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{fs::OpenOptions, io::Write, ops::Range, path::PathBuf, time::Instant};
+use std::{fs, fs::OpenOptions, io::Write, ops::Range, path::PathBuf, time::Instant};
 
 use axum::body::Bytes;
 use chrono::NaiveDateTime;
@@ -101,9 +101,15 @@ generate_executor! {
         Ok(())
     }
 
-    DeletePost / delete_post, (db, id: i64) => rusqlite::Result<()> {
-        let mut stmt = db.prepare_cached(queries::DELETE_POST)?;
-        stmt.execute([id])?;
+    DeletePost / delete_post, (db, id: i64, imgdir: PathBuf) => Result<()> {
+        let tx = db.transaction()?;
+        let mut stmt = tx.prepare_cached(queries::DELETE_POST)?;
+        if let Some(image) = stmt.query_row([id], |r| r.get::<_,String>(0)).optional()? {
+            let path = imgdir.join(&image);
+            fs::remove_file(path)?;
+        }
+        drop(stmt);
+        tx.commit()?;
         Ok(())
     }
 

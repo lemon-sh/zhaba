@@ -173,7 +173,7 @@ input::placeholder, textarea::placeholder {
 
 input[type="file"] {
     background: var(--structural);
-    padding: 0.25em;
+    padding: 0.5em;
 }
 
 input[type="file"]::file-selector-button {

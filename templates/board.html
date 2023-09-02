@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}/{{ board.name }}/{% endblock %}
+{% block title_css %}style="color: #{{ "{:06x}"|format(board.color) }}"{% endblock %}
 {% block description %}{{ board.description }}{% endblock %}
 
 {% block content %}
