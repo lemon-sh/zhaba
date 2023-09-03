@@ -101,16 +101,19 @@ generate_executor! {
         Ok(())
     }
 
-    DeletePost / delete_post, (db, id: i64, imgdir: PathBuf) => Result<()> {
+    DeletePost / delete_post, (db, id: i64, imgdir: PathBuf) => Result<bool> {
         let tx = db.transaction()?;
         let mut stmt = tx.prepare_cached(queries::DELETE_POST)?;
-        if let Some(image) = stmt.query_row([id], |r| r.get::<_,String>(0)).optional()? {
+        let Some(image): Option<Option<String>> = stmt.query_row([id], |r| r.get(0)).optional()? else {
+            return Ok(false)
+        };
+        if let Some(image) = image {
             let path = imgdir.join(&image);
             fs::remove_file(path)?;
         }
         drop(stmt);
         tx.commit()?;
-        Ok(())
+        Ok(true)
     }
 
     GetPosts / get_posts, (db, board: i64, range: Range<u64>) => Result<Vec<models::Post>> {

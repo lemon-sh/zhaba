@@ -144,16 +144,20 @@ pub async fn handle_deletepost(
     TypedHeader(headers::Referer(referer)): TypedHeader<headers::Referer>,
     Path(post_id): Path<i64>,
 ) -> Result<impl IntoResponse, Response<Body>> {
-    state
+    let deleted = state
         .db
         .delete_post(post_id, state.cfg.image_path.clone())
         .await
         .map_err(error::err_into_500)?;
-    session
-        .insert("flash", Flash::Success("Post successfully deleted".into()))
-        .unwrap();
 
-    Ok(Redirect::to(&referer))
+    if deleted {
+        session
+            .insert("flash", Flash::Success("Post successfully deleted".into()))
+            .unwrap();
+        Ok(Redirect::to(&referer))
+    } else {
+        Err(error::http_404())
+    }
 }
 
 pub async fn auth_middleware<B>(
