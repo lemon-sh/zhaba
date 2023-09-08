@@ -22,7 +22,7 @@ pub async fn whois(server: &str, query: &str) -> Result<Option<WhoisResult>> {
     let mut lines = BufReader::new(read).lines();
 
     write.write_all(query.as_bytes()).await?;
-    write.write(&[b'\n']).await?;
+    write.write_all(&[b'\n']).await?;
 
     loop {
         if let Some(line) = lines.next_line().await? {
@@ -45,7 +45,7 @@ pub async fn whois(server: &str, query: &str) -> Result<Option<WhoisResult>> {
                         .trim()
                         .get(2..)
                         .ok_or_else(|| eyre!("Invalid ASN format from whois: {value}"))?;
-                    asn = Some(asnstr.parse()?)
+                    asn = Some(asnstr.parse()?);
                 }
                 "mnt-by" => mnt = Some(value.trim().to_string()),
                 _ => {}

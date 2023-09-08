@@ -1,3 +1,6 @@
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::unreadable_literal)]
+
 use axum::ServiceExt;
 use std::{env, str::FromStr, sync::Arc, thread, time::Duration};
 
@@ -87,7 +90,7 @@ async fn main() -> Result<()> {
     let (ctx, _) = broadcast::channel(1);
     let maintenance_task = tokio::spawn(maintenance(ctx.subscribe(), session_store.clone(), 3600));
 
-    let router = router::build(db_conn, cfg.clone(), session_store).await?;
+    let router = router::build(db_conn, cfg.clone(), session_store)?;
     let normalized_router = NormalizePathLayer::trim_trailing_slash().layer(router);
 
     tracing::info!("Listening on http://{}", cfg.listen);

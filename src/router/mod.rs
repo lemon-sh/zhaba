@@ -29,7 +29,7 @@ pub struct AppState {
     cfg: Arc<Config>,
 }
 
-pub async fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore) -> Result<Router> {
+pub fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore) -> Result<Router> {
     let secret = base64::decode_config(&cfg.cookie_secret, URL_SAFE_NO_PAD)?;
 
     let admin_router = Router::new()

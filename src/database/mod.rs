@@ -108,7 +108,7 @@ generate_executor! {
             return Ok(false)
         };
         if let Some(image) = image {
-            let path = imgdir.join(&image);
+            let path = imgdir.join(image);
             fs::remove_file(path)?;
         }
         drop(stmt);
