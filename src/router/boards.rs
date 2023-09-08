@@ -121,7 +121,7 @@ pub async fn handle_post(
 
     state
         .db
-        .create_post(board_name, content, ip, whois, image)
+        .create_post(board_name, content, ip, whois, None, image)
         .await
         .map_err(error::err_into_500)?;
 

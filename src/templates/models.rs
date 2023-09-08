@@ -12,6 +12,7 @@ pub struct Post {
     pub image: Option<String>,
     pub ip: String,
     pub whois: Option<WhoisResult>,
+    pub reply: Option<u64>,
     pub time: NaiveDateTime,
 }
 

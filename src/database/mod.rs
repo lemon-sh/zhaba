@@ -79,26 +79,39 @@ impl fmt::Debug for InsertImage {
     }
 }
 
+#[derive(Debug)]
+pub enum CreatePostResult {
+    Created,
+    InvalidReply
+}
+
 generate_executor! {
-    AddPost / create_post, (db, board: String, content: String, ip: String, whois: Option<WhoisResult>, image: Option<InsertImage>) => Result<()> {
+    AddPost / create_post, (db, board: String, content: String, ip: String, whois: Option<WhoisResult>, reply: Option<u64>, image: Option<InsertImage>) => Result<CreatePostResult> {
         let (asn, mnt) = if let Some(whois) = whois {
             (Some(whois.asn), Some(whois.mnt))
         } else {
             (None, None)
         };
+        if let Some(reply) = reply {
+            let mut stmt = db.prepare_cached(queries::CHECK_REPLY)?;
+            let exists = stmt.query([reply])?.next()?.is_some();
+            if !exists {
+                return Ok(CreatePostResult::InvalidReply)
+            }
+        }
         if let Some(image) = image {
             let tx = db.transaction()?;
             let mut stmt = tx.prepare_cached(queries::INSERT_POST)?;
             let path = image.directory.join(&image.filename);
             OpenOptions::new().write(true).truncate(true).create_new(true).open(path)?.write_all(&image.bytes)?;
-            stmt.execute(params![content, Some(image.filename), ip, asn, mnt, board])?;
+            stmt.execute(params![content, Some(image.filename), ip, asn, mnt, reply, board])?;
             drop(stmt);
             tx.commit()?;
         } else {
             let mut stmt = db.prepare_cached(queries::INSERT_POST)?;
-            stmt.execute(params![content, <Option<String>>::None, ip, asn, mnt, board])?;
+            stmt.execute(params![content, <Option<String>>::None, ip, asn, mnt, reply, board])?;
         }
-        Ok(())
+        Ok(CreatePostResult::Created)
     }
 
     DeletePost / delete_post, (db, id: i64, imgdir: PathBuf) => Result<bool> {
@@ -160,7 +173,7 @@ generate_executor! {
 fn posts_from_rows(mut rows: Rows) -> Result<Vec<models::Post>> {
     let mut posts = Vec::new();
     while let Some(row) = rows.next()? {
-        let timestamp = row.get(6)?;
+        let timestamp = row.get(7)?;
         let time = NaiveDateTime::from_timestamp_opt(timestamp, 0)
             .ok_or_else(|| eyre!("Invalid timestamp {timestamp}"))?;
         let whois = if let (Some(asn), Some(mnt)) = (row.get(4)?, row.get(5)?) {
@@ -174,6 +187,7 @@ fn posts_from_rows(mut rows: Rows) -> Result<Vec<models::Post>> {
             image: row.get(2)?,
             ip: row.get(3)?,
             whois,
+            reply: row.get(6)?,
             time,
         });
     }

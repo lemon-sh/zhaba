@@ -8,6 +8,7 @@ create table if not exists posts(
     ip text not null,
     asn integer,
     mnt text,
+    reply integer,
     time integer default (strftime('%s','now')),
     board integer not null,
     foreign key (board) references boards(id) on delete cascade
