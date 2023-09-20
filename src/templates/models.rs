@@ -12,8 +12,17 @@ pub struct Post {
     pub image: Option<String>,
     pub ip: String,
     pub whois: Option<WhoisResult>,
-    pub reply: Option<u64>,
+    pub reply: Option<ReplyTo>,
     pub time: NaiveDateTime,
+    pub board: u64,
+}
+
+#[derive(Debug)]
+pub struct ReplyTo {
+    pub id: u64,
+    pub time: NaiveDateTime,
+    pub board: u64,
+    pub board_name: String,
 }
 
 #[derive(Debug, Deserialize)]

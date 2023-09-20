@@ -49,7 +49,8 @@ pub async fn handle_login(
     let Some(admin) = state.cfg.admins.iter().find(|a| a.name == login_form.user) else {
         return templates::Login {
             flash: Flash::Error("Invalid login".into()),
-        }.into_response()
+        }
+        .into_response();
     };
     if admin.password != login_form.pass {
         return templates::Login {

@@ -82,7 +82,7 @@ impl fmt::Debug for InsertImage {
 #[derive(Debug)]
 pub enum CreatePostResult {
     Created,
-    InvalidReply
+    InvalidReply,
 }
 
 generate_executor! {
@@ -181,14 +181,30 @@ fn posts_from_rows(mut rows: Rows) -> Result<Vec<models::Post>> {
         } else {
             None
         };
+
+        let mut reply = None;
+        let reply_field: Option<u64> = row.get(9)?;
+        if let Some(reply_field) = reply_field {
+            let reply_timestamp = row.get(10)?;
+            let reply_time = NaiveDateTime::from_timestamp_opt(reply_timestamp, 0)
+                .ok_or_else(|| eyre!("Invalid timestamp {reply_timestamp}"))?;
+            reply = Some(models::ReplyTo {
+                id: reply_field,
+                time: reply_time,
+                board: row.get(11)?,
+                board_name: row.get(12)?,
+            });
+        }
+
         posts.push(models::Post {
             id: row.get(0)?,
             content: row.get(1)?,
             image: row.get(2)?,
             ip: row.get(3)?,
             whois,
-            reply: row.get(6)?,
+            reply,
             time,
+            board: row.get(8)?,
         });
     }
     Ok(posts)

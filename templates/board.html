@@ -13,6 +13,9 @@
         <label for="image">Attach an image (optional):</label>
         <input type="file" accept="image/*" name="image" id="image">
         <br>
+        <label for="reply">Reply to (optional):</label>
+        <input type="text" name="reply" id="reply" placeholder="post ID">
+        <br>
         <button>Post</button>
     </form>
 </details>
@@ -34,7 +37,7 @@
 </form>
 
 {% for post in posts %}
-<div class="post">
+<div class="post" id="{{ post.id }}">
     <div class="post-header">
         <span class="post-id">#{{ post.id }}&emsp;</span>
         <span class="post-ip">{{ post.ip }}</span>
@@ -52,6 +55,19 @@
         {% endif %}
     </div>
     <div class="post-content">
+        {% if let Some(reply) = post.reply %}
+            {% let month = reply.time.month() %}
+            {% let year = reply.time.year() %}
+            {% if
+                post.time.month() == month &&
+                post.time.year() == year &&
+                post.board == reply.board
+            %}
+                <span class="reply-to"><a href="#{{ reply.id }}"> >> reply to: {{ reply.id }}</a></span><br>
+            {% else %}
+                <span class="reply-to"><a href="/{{ reply.board_name }}?y={{ year }}&m={{ month }}#{{ reply.id }}"> >> reply to: {{ reply.id }}</a></span><br>
+            {% endif %}
+        {% endif %}
         {{ post.content|safe }}
         {% if let Some(filename) = post.image %}
         <hr>

@@ -18,7 +18,7 @@ use rand::{
 use serde::Deserialize;
 
 use crate::{
-    database::InsertImage,
+    database::{CreatePostResult, InsertImage},
     imghdr,
     templates::{self, models::Flash},
     whois::{self},
@@ -58,9 +58,9 @@ pub async fn handle_post(
     mp: Multipart,
 ) -> Result<Redirect, Response<Body>> {
     let redirect_uri = format!("/{board_name}");
-    let (content, image) = read_post_mp(mp).await.map_err(error::err_into_500)?;
-    let Some(content) = content else {
-        return Err(error::http_400())
+    let post = read_post_mp(mp).await.map_err(error::err_into_500)?;
+    let Some(content) = post.content else {
+        return Err(error::http_400());
     };
     if content.is_empty() {
         session
@@ -95,7 +95,7 @@ pub async fn handle_post(
         .await
         .map_err(error::err_into_500)?;
 
-    let image = if let Some(bytes) = image {
+    let image = if let Some(bytes) = post.image {
         if bytes.is_empty() {
             None
         } else if let Some(ext) = imghdr::imghdr(&bytes) {
@@ -119,18 +119,26 @@ pub async fn handle_post(
         None
     };
 
-    state
+    if let CreatePostResult::InvalidReply = state
         .db
-        .create_post(board_name, content, ip, whois, None, image)
+        .create_post(board_name, content, ip, whois, post.reply, image)
         .await
-        .map_err(error::err_into_500)?;
-
-    session
-        .insert(
-            "flash",
-            Flash::Success("Post was added successfully".into()),
-        )
-        .unwrap();
+        .map_err(error::err_into_500)?
+    {
+        session
+            .insert(
+                "flash",
+                Flash::Error("Couldn't find the post you are replying to".into()),
+            )
+            .unwrap();
+    } else {
+        session
+            .insert(
+                "flash",
+                Flash::Success("Post was added successfully".into()),
+            )
+            .unwrap();
+    }
 
     Ok(Redirect::to(&redirect_uri))
 }
@@ -139,6 +147,12 @@ pub async fn handle_post(
 pub struct DateRangeQuery {
     y: Option<i32>,
     m: Option<u32>,
+}
+
+pub struct PostResult {
+    pub content: Option<String>,
+    pub image: Option<Bytes>,
+    pub reply: Option<u64>,
 }
 
 pub async fn handle_view(
@@ -165,7 +179,9 @@ pub async fn handle_view(
     let year = range.y.unwrap_or_else(|| now.year());
     let month = range.m.unwrap_or_else(|| now.month());
 
-    let Some(start) = NaiveDate::from_ymd_opt(year, month, 1) else { return Err(error::http_400()) };
+    let Some(start) = NaiveDate::from_ymd_opt(year, month, 1) else {
+        return Err(error::http_400());
+    };
 
     let start_ts = start.and_hms_opt(0, 0, 0).unwrap().timestamp() as u64;
     let end_ts = (start + Months::new(1))
@@ -189,15 +205,28 @@ pub async fn handle_view(
     })
 }
 
-async fn read_post_mp(mut mp: Multipart) -> color_eyre::Result<(Option<String>, Option<Bytes>)> {
+async fn read_post_mp(
+    mut mp: Multipart,
+) -> color_eyre::Result<PostResult> {
     let mut content = None;
     let mut image = None;
+    let mut reply = None;
     while let Some(field) = mp.next_field().await? {
         match field.name() {
             Some("content") => content = Some(field.text().await?),
             Some("image") => image = Some(field.bytes().await?),
+            Some("reply") => {
+                reply = {
+                    let content = field.text().await?;
+                    if !content.is_empty() {
+                        Some(content.parse()?)
+                    } else {
+                        None
+                    }
+                }
+            }
             _ => {}
         }
     }
-    Ok((content, image))
+    Ok(PostResult { content, image, reply })
 }
