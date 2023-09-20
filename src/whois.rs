@@ -11,7 +11,7 @@ pub struct WhoisResult {
 }
 
 pub async fn whois(server: &str, query: &str) -> Result<Option<WhoisResult>> {
-    if server == "!" {
+    if server.chars().next() == Some('!') {
         return Ok(Some(WhoisResult {
             asn: 4242426969,
             mnt: "MIETEK-MNT".into(),
