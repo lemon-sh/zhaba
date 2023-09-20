@@ -1,4 +1,4 @@
-use std::{net::Ipv4Addr, sync::OnceLock};
+use std::{net::Ipv4Addr, num::ParseIntError, sync::OnceLock};
 
 use axum::{
     body::{Body, Bytes},
@@ -119,9 +119,17 @@ pub async fn handle_post(
         None
     };
 
+    let reply = post.reply.transpose();
+    if reply.is_err() {
+        session
+            .insert("flash", Flash::Error("Couldn't parse reply ID".into()))
+            .unwrap();
+        return Ok(Redirect::to(&redirect_uri));
+    }
+
     if let CreatePostResult::InvalidReply = state
         .db
-        .create_post(board_name, content, ip, whois, post.reply, image)
+        .create_post(board_name, content, ip, whois, reply.unwrap(), image)
         .await
         .map_err(error::err_into_500)?
     {
@@ -152,7 +160,7 @@ pub struct DateRangeQuery {
 pub struct PostResult {
     pub content: Option<String>,
     pub image: Option<Bytes>,
-    pub reply: Option<u64>,
+    pub reply: Option<Result<u64, ParseIntError>>,
 }
 
 pub async fn handle_view(
@@ -205,9 +213,7 @@ pub async fn handle_view(
     })
 }
 
-async fn read_post_mp(
-    mut mp: Multipart,
-) -> color_eyre::Result<PostResult> {
+async fn read_post_mp(mut mp: Multipart) -> color_eyre::Result<PostResult> {
     let mut content = None;
     let mut image = None;
     let mut reply = None;
@@ -219,7 +225,7 @@ async fn read_post_mp(
                 reply = {
                     let content = field.text().await?;
                     if !content.is_empty() {
-                        Some(content.parse()?)
+                        Some(content.parse())
                     } else {
                         None
                     }
@@ -228,5 +234,9 @@ async fn read_post_mp(
             _ => {}
         }
     }
-    Ok(PostResult { content, image, reply })
+    Ok(PostResult {
+        content,
+        image,
+        reply,
+    })
 }
