@@ -9,13 +9,11 @@
 <details>
     <summary>Add post</summary>
     <form class="post-form" method="post" enctype="multipart/form-data" action="/{{ board.name }}/post">
+        <label for="reply">Reply to (optional):</label>
+        <input type="text" name="reply" id="reply" placeholder="post id..." size="1">
         <textarea name="content" placeholder="post content..."></textarea><br>
         <label for="image">Attach an image (optional):</label>
         <input type="file" accept="image/*" name="image" id="image">
-        <br>
-        <label for="reply">Reply to (optional):</label>
-        <input type="text" name="reply" id="reply" placeholder="post ID">
-        <br>
         <button>Post</button>
     </form>
 </details>
@@ -39,7 +37,7 @@
 {% for post in posts %}
 <div class="post" id="{{ post.id }}">
     <div class="post-header">
-        <span class="post-id">#{{ post.id }}&emsp;</span>
+        <span class="post-id">#{{ post.id }}</span>
         <span class="post-ip">{{ post.ip }}</span>
         {% match post.whois %}
         {% when Some with (whois) %}
@@ -67,6 +65,7 @@
             {% else %}
                 <span class="reply-to"><a href="/{{ reply.board_name }}?y={{ year }}&m={{ month }}#{{ reply.id }}"> >> reply to: {{ reply.id }}</a></span><br>
             {% endif %}
+            <hr>
         {% endif %}
         {{ post.content|safe }}
         {% if let Some(filename) = post.image %}

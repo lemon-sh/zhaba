@@ -223,7 +223,6 @@ details {
 }
 
 .post-form > textarea {
-    margin-top: 1em;
     width: 100%;
 }
 
@@ -328,6 +327,10 @@ textarea {
     border-radius: 0.5em;
 }
 
+.post:target > .post-header {
+    background-color: var(--light-structural);
+}
+
 .post-header {
     font-family: var(--monospace-font);
     letter-spacing: -1px;
@@ -358,7 +361,7 @@ textarea {
 }
 
 .post-asn {
-    color: #caff6e;
+    color: #d4ff89;
 }
 
 .post-mnt {
@@ -366,15 +369,15 @@ textarea {
 }
 
 .post-time {
-    color: #7ed2ff;
+    color: #a1deff;
 }
 
 .post-ip {
-    color: #a98dff
+    color: #ff8d8d
 }
 
 .post-id {
-    color: #fff274;
+    color: #ffb574;
 }
 
 .img-container {
