@@ -59,7 +59,7 @@ async fn main() -> Result<()> {
                 let mut bytes = [0u8; 64];
                 thread_rng().fill_bytes(&mut bytes);
                 let b64 = Base64Display::with_config(&bytes, URL_SAFE_NO_PAD);
-                eprintln!("{b64}");
+                println!("{b64}");
             }
             _ => {
                 eprintln!("Error: Invalid subcommand '{subcommand}'");

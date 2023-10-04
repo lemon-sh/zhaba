@@ -7,27 +7,19 @@
 {% block content %}
 {% include "flash.html" %}
 <details>
-    <summary>add post</summary>
+    <summary>Add post</summary>
     <form class="post-form" method="post" enctype="multipart/form-data" action="/{{ board.name }}/post">
-        <label for="reply">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-corner-down-right"><polyline points="15 10 20 15 15 20"></polyline><path d="M4 4v7a4 4 0 0 0 4 4h12"></path></svg>&nbsp;
-        </label>
-        <input type="text" name="reply" id="reply" placeholder="post id..." size="1">
-        <br>
-        <label for="image">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-image"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>&nbsp;
-        </label>
-        <input type="file" accept="image/*" name="image" id="image">
+        <label for="reply">Reply to (optional):</label>
+        <input type="text" name="reply" id="reply" placeholder="post id...">
         <textarea name="content" placeholder="post content..."></textarea><br>
-        <button>
-            post
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        </button>
+        <label for="image">Attach an image (optional):</label>
+        <input type="file" accept="image/*" name="image" id="image">
+        <button>Post</button>
     </form>
 </details>
 <hr>
 <form class="date-picker">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+    <span>Date:</span>
     <select name="y" id="year">
         {% let current_year = Utc::now().year() %}
         {% for i in STARTING_YEAR..=current_year %}
@@ -39,9 +31,7 @@
             <option value="{{ i }}" {% if i == month %}selected{% endif %}>{{ i }}</option>
         {% endfor %}
     </select>
-    <button>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-    </button>
+    <button>go</button>
 </form>
 
 {% for post in posts %}
@@ -64,17 +54,17 @@
     </div>
     <div class="post-content">
         {% if let Some(reply) = post.reply %}
-                            {% let month = reply.time.month() %}
-                {% let year = reply.time.year() %}
-                {% if
-                    post.time.month() == month &&
-                    post.time.year() == year &&
-                    post.board == reply.board
-                %}
-                    <span class="reply-to"><a href="#{{ reply.id }}"> >> reply to: {{ reply.id }}</a></span><br>
-                {% else %}
-                    <span class="reply-to"><a href="/{{ reply.board_name }}?y={{ year }}&m={{ month }}#{{ reply.id }}"> >> reply to: {{ reply.id }}</a></span><br>
-                {% endif %}
+            {% let month = reply.time.month() %}
+            {% let year = reply.time.year() %}
+            {% if
+                post.time.month() == month &&
+                post.time.year() == year &&
+                post.board == reply.board
+            %}
+                <span class="reply-to"><a href="#{{ reply.id }}"> >> reply to: {{ reply.id }}</a></span><br>
+            {% else %}
+                <span class="reply-to"><a href="/{{ reply.board_name }}?y={{ year }}&m={{ month }}#{{ reply.id }}"> >> reply to: {{ reply.id }}</a></span><br>
+            {% endif %}
             <hr>
         {% endif %}
         {{ post.content|safe }}
