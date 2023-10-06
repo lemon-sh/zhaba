@@ -15,7 +15,7 @@ use axum_sessions::{
 };
 use color_eyre::Result;
 
-use crate::{config::Config, database::ExecutorConnection};
+use crate::{config::Config, database::ExecutorConnection, templates};
 
 mod admin;
 mod boards;
@@ -45,6 +45,7 @@ pub fn build(db: ExecutorConnection, cfg: Arc<Config>, store: MemoryStore) -> Re
 
     let router = Router::new()
         .route("/", get(boards::handle_home))
+        .route("/about", get(|| async { templates::About }))
         .route("/:b", get(boards::handle_view))
         .route("/:b/post", post(boards::handle_post))
         .route("/static/*file", get(static_files::static_handler))

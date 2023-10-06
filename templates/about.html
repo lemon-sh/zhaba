@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}zhaba{% endblock %}
+{% block description %}Proudly brought to you by AS4242421411{% endblock %}
+{% block about_navitem %}current-navitem{% endblock %}
+
+{% block content %}
+<p><b>zhaba</b> is a shitposting board site inspired (roughly) by 4chan, written in Rust with dn42 in mind.<br>The source code is licensed under EUPL 1.2 and is available <a href="https://git.lemonsh.moe/C4TG1RL5/zhaba">on the C4TG1RL5 git</a>.</p>
+<h3>BBcode reference</h3>
+<p>BBcode is supported in posts. The following tags are available:</p>
+<ul>
+    <li><code>[b] <b>bold</b> [/b]</code></li>
+    <li><code>[i] <i>italic</i> [/i]</code></li>
+    <li><code>[u] <u>underline</u> [/u]</code></li>
+    <li><code>[s] <s>strikethrough</s> [/s]</code></li>
+    <li><code>[sup] <sup>superscript</sup> [/sup]</code></li>
+    <li><code>[sub] <sub>subscript</sub> [/sub]</code></li>
+</ul>
+{% endblock content %}

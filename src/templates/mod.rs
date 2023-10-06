@@ -36,3 +36,7 @@ pub struct AdminHome {
     pub flash: Flash,
     pub boards: Vec<Board>,
 }
+
+#[derive(Template)]
+#[template(path = "about.html")]
+pub struct About;
