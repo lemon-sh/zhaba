@@ -26,7 +26,7 @@ pub async fn whois(server: &str, query: &str) -> Result<Option<WhoisResult>> {
 
     loop {
         if let Some(line) = lines.next_line().await? {
-            if line.starts_with("% Information related to 'route/") {
+            if line.starts_with("% Information related to 'route") {
                 break;
             }
         } else {
@@ -41,11 +41,11 @@ pub async fn whois(server: &str, query: &str) -> Result<Option<WhoisResult>> {
         if let Some((key, value)) = line.split_once(':') {
             match key {
                 "origin" => {
-                    let asnstr = value
+                    let asn_str = value
                         .trim()
                         .get(2..)
                         .ok_or_else(|| eyre!("Invalid ASN format from whois: {value}"))?;
-                    asn = Some(asnstr.parse()?);
+                    asn = Some(asn_str.parse()?);
                 }
                 "mnt-by" => mnt = Some(value.trim().to_string()),
                 _ => {}
